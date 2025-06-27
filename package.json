@@ -14,11 +14,18 @@
     "@as-integrations/next": "^3.2.0",
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.10.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.19.1",
     "graphql": "^16.11.0",
     "graphql-tag": "^2.12.6",
+    "lucide-react": "^0.523.0",
     "next": "15.3.4",
+    "next-themes": "^0.4.6",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sonner": "^2.0.5",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,6 +37,7 @@
     "eslint-config-next": "15.3.4",
     "prisma": "^6.10.1",
     "tailwindcss": "^4",
+    "tw-animate-css": "^1.3.4",
     "typescript": "^5"
   }
 }

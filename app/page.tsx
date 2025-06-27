@@ -2,6 +2,17 @@
 
 import { gql, useQuery, useMutation } from "@apollo/client"
 import { useState } from "react"
+import {
+  Plus,
+  Trash2,
+  Check,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+} from "lucide-react"
+import { motion } from "framer-motion"
+import { toast } from "sonner"
 
 const GET_TODOS = gql`
   query {
@@ -50,31 +61,60 @@ export default function Page() {
   const [toggleTodo] = useMutation(TOGGLE_TODO)
   const [addSuggestion] = useMutation(ADD_SUGGESTION)
   const [text, setText] = useState("")
+  const [loadingSuggestions, setLoadingSuggestions] = useState<number | null>(
+    null
+  )
+  const [expandedSuggestions, setExpandedSuggestions] = useState<number | null>(
+    null
+  )
 
   const handleAdd = async () => {
     if (!text.trim()) return
-    await addTodo({ variables: { text } })
-    setText("")
-    refetch()
+    try {
+      await addTodo({ variables: { text } })
+      setText("")
+      refetch()
+      toast.success("Task added successfully")
+    } catch (error) {
+      toast.error("Failed to add task")
+    }
   }
 
   const handleDelete = async (id: number) => {
-    await deleteTodo({ variables: { id } })
-    refetch()
+    try {
+      await deleteTodo({ variables: { id } })
+      refetch()
+      toast.success("Task deleted")
+    } catch (error) {
+      toast.error("Failed to delete task")
+    }
   }
 
-  const handleToggle = async (id: Number) => {
-    await toggleTodo({ variables: { id } })
-    refetch()
+  const handleToggle = async (id: number) => {
+    const todo = data.todos.find((t: { id: number }) => t.id === id)
+    try {
+      await toggleTodo({ variables: { id } })
+      refetch()
+      if (todo?.completed) {
+        toast.success("Task marked as incomplete")
+      } else {
+        toast.success("Task completed! 🎉")
+      }
+    } catch (error) {
+      toast.error("Failed to update task")
+    }
   }
 
   const handleSuggestSubtasks = async (todoId: number) => {
     const todo = data.todos.find((t: { id: number }) => t.id === todoId)
     if (!todo) return
+
     if (todo.suggestion && todo.suggestion.length > 0) {
-      alert("Suggestions: " + todo.suggestion.join(", "))
+      setExpandedSuggestions(expandedSuggestions === todoId ? null : todoId)
       return
     }
+
+    setLoadingSuggestions(todoId)
     try {
       const response = await fetch("/api/suggest", {
         method: "POST",
@@ -88,62 +128,220 @@ export default function Page() {
         variables: { id: todoId, suggestion: suggestions },
       })
       refetch()
-      alert("Suggestions: " + suggestions.join(", "))
+      setExpandedSuggestions(todoId)
+      toast.success("AI suggestions generated!")
     } catch (error) {
       console.error(error)
-      alert("Could not get suggestions. Please try again.")
+      toast.error("Failed to generate suggestions")
+    } finally {
+      setLoadingSuggestions(null)
     }
   }
 
-  if (loading) return <p>Loading...</p>
-  if (error) return <p>Error: {error.message}</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center space-x-3 text-black"
+        >
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="text-lg font-medium">Loading your tasks...</span>
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-red-600 text-center"
+        >
+          <p className="text-lg">Error: {error.message}</p>
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
-    <main className="p-4 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Todo App</h1>
-
-      <div className="flex gap-2 mb-4">
-        <input
-          className="border p-2 flex-1"
-          placeholder="Add todo..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button
-          onClick={handleAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+    <div className="min-h-screen bg-white">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
         >
-          Add
-        </button>
-      </div>
+          <h1 className="text-4xl font-bold text-black mb-2">Smart Todo</h1>
+          <p className="text-gray-600 text-lg">AI-powered task management</p>
+        </motion.div>
 
-      <ul>
-        {data.todos.map((todo: any) => (
-          <li
-            key={todo.id}
-            className="flex justify-between items-center border p-2 mb-2 rounded"
+        {/* Add Todo Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-8"
+        >
+          <div className="flex gap-3">
+            <input
+              className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all duration-200"
+              placeholder="What needs to be done?"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleAdd()}
+            />
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleAdd}
+              className="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center"
+            >
+              <Plus className="h-5 w-5" />
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Todo List */}
+        <div className="space-y-3">
+          {data.todos.map((todo: any, index: number) => (
+            <motion.div
+              key={todo.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 transition-colors duration-200"
+            >
+              <div className="p-6">
+                <div className="flex items-center gap-4">
+                  {/* Complete Button - No Animation */}
+                  <button
+                    onClick={() => handleToggle(todo.id)}
+                    className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-100 ${
+                      todo.completed
+                        ? "bg-black border-black"
+                        : "border-gray-300 hover:border-black"
+                    }`}
+                  >
+                    {todo.completed && <Check className="h-3 w-3 text-white" />}
+                  </button>
+
+                  {/* Todo Text */}
+                  <span
+                    className={`flex-1 text-lg transition-all duration-200 ${
+                      todo.completed
+                        ? "line-through text-gray-500"
+                        : "text-black"
+                    }`}
+                  >
+                    {todo.text}
+                  </span>
+
+                  {/* AI Suggestions Button - Fixed Width */}
+                  <button
+                    onClick={() => handleSuggestSubtasks(todo.id)}
+                    disabled={loadingSuggestions === todo.id}
+                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-black px-4 py-2 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-32 justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      {loadingSuggestions === todo.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4" />
+                      )}
+                      <span className="text-sm">
+                        {todo.suggestion && todo.suggestion.length > 0
+                          ? "View"
+                          : "Suggest"}
+                      </span>
+                    </div>
+                    {todo.suggestion && todo.suggestion.length > 0 && (
+                      <div className="flex-shrink-0">
+                        {expandedSuggestions === todo.id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Delete Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleDelete(todo.id)}
+                    className="flex-shrink-0 w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 flex items-center justify-center transition-all duration-200"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Suggestions Panel - No Layout Shift */}
+              {expandedSuggestions === todo.id &&
+                todo.suggestion &&
+                todo.suggestion.length > 0 && (
+                  <div className="border-t border-gray-200 bg-gray-50">
+                    <div className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Sparkles className="h-4 w-4 text-black" />
+                        <span className="text-sm font-medium text-black">
+                          AI Suggestions
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {todo.suggestion.map(
+                          (suggestion: string, index: number) => (
+                            <div
+                              key={index}
+                              className="bg-white border border-gray-200 rounded-lg p-3 text-gray-700 text-sm hover:bg-gray-50 transition-colors duration-200"
+                            >
+                              <span className="text-black font-medium mr-2">
+                                •
+                              </span>
+                              {suggestion}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {data.todos.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-center py-16"
           >
-            <span
-              className={todo.completed ? "line-through text-gray-500" : ""}
-              onClick={() => handleToggle(todo.id)}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"
             >
-              {todo.text}
-            </span>
-            <button
-              onClick={() => handleDelete(todo.id)}
-              className="text-red-500"
-            >
-              ✕
-            </button>
-            <button
-              onClick={() => handleSuggestSubtasks(todo.id)}
-              className="text-red-500"
-            >
-              suggest
-            </button>
-          </li>
-        ))}
-      </ul>
-    </main>
+              <Sparkles className="h-8 w-8 text-black" />
+            </motion.div>
+            <h3 className="text-xl font-medium text-black mb-2">
+              No tasks yet
+            </h3>
+            <p className="text-gray-600">
+              Add your first task to get started with AI-powered suggestions
+            </p>
+          </motion.div>
+        )}
+      </div>
+    </div>
   )
 }
