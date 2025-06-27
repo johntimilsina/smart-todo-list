@@ -58,6 +58,47 @@ export default function Page() {
     refetch()
   }
 
+  const handleSuggestSubtasks = async (todoId: number) => {
+    //setLoadingId(todoId) // Start loading animation
+    const todo = data.todos.find((t: { id: number }) => t.id === todoId)
+
+    if (!todo) {
+      //setLoadingId(null)
+      return
+    }
+
+    try {
+      const response = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: todo.text }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch suggestions")
+      }
+
+      const data = await response.json()
+      const { suggestions } = data
+
+      console.log("suggestions", suggestions)
+
+      // Update the specific todo with the new subtasks
+      /* setTodos((prevTodos) =>
+        prevTodos.map((t) =>
+          t.id === todoId
+            ? { ...t, subtasks: [...t.subtasks, ...suggestions] }
+            : t
+        )
+      ) */
+    } catch (error) {
+      console.error(error)
+      alert("Could not get suggestions. Please try again.")
+    } finally {
+      //setLoadingId(null) // Stop loading animation
+    }
+  }
+
   if (loading) return <p>Loading...</p>
   if (error) return <p>Error: {error.message}</p>
 
@@ -97,6 +138,12 @@ export default function Page() {
               className="text-red-500"
             >
               ✕
+            </button>
+            <button
+              onClick={() => handleSuggestSubtasks(todo.id)}
+              className="text-red-500"
+            >
+              suggest
             </button>
           </li>
         ))}
