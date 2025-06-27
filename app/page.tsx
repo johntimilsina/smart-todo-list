@@ -9,6 +9,7 @@ const GET_TODOS = gql`
       id
       text
       completed
+      suggestion
     }
   }
 `
@@ -33,12 +34,21 @@ const TOGGLE_TODO = gql`
     }
   }
 `
+const ADD_SUGGESTION = gql`
+  mutation ($id: Int!, $suggestion: [String]!) {
+    addSuggestion(id: $id, suggestion: $suggestion) {
+      id
+      suggestion
+    }
+  }
+`
 
 export default function Page() {
   const { data, loading, error, refetch } = useQuery(GET_TODOS)
   const [addTodo] = useMutation(ADD_TODO)
   const [deleteTodo] = useMutation(DELETE_TODO)
   const [toggleTodo] = useMutation(TOGGLE_TODO)
+  const [addSuggestion] = useMutation(ADD_SUGGESTION)
   const [text, setText] = useState("")
 
   const handleAdd = async () => {
@@ -59,43 +69,29 @@ export default function Page() {
   }
 
   const handleSuggestSubtasks = async (todoId: number) => {
-    //setLoadingId(todoId) // Start loading animation
     const todo = data.todos.find((t: { id: number }) => t.id === todoId)
-
-    if (!todo) {
-      //setLoadingId(null)
+    if (!todo) return
+    if (todo.suggestion && todo.suggestion.length > 0) {
+      alert("Suggestions: " + todo.suggestion.join(", "))
       return
     }
-
     try {
       const response = await fetch("/api/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: todo.text }),
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch suggestions")
-      }
-
-      const data = await response.json()
-      const { suggestions } = data
-
-      console.log("suggestions", suggestions)
-
-      // Update the specific todo with the new subtasks
-      /* setTodos((prevTodos) =>
-        prevTodos.map((t) =>
-          t.id === todoId
-            ? { ...t, subtasks: [...t.subtasks, ...suggestions] }
-            : t
-        )
-      ) */
+      if (!response.ok) throw new Error("Failed to fetch suggestions")
+      const dataRes = await response.json()
+      const { suggestions } = dataRes
+      await addSuggestion({
+        variables: { id: todoId, suggestion: suggestions },
+      })
+      refetch()
+      alert("Suggestions: " + suggestions.join(", "))
     } catch (error) {
       console.error(error)
       alert("Could not get suggestions. Please try again.")
-    } finally {
-      //setLoadingId(null) // Stop loading animation
     }
   }
 

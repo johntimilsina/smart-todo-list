@@ -6,6 +6,7 @@ export const typeDefs = gql`
     text: String!
     completed: Boolean!
     createdAt: String!
+    suggestion: [String]
   }
 
   type Query {
@@ -16,5 +17,6 @@ export const typeDefs = gql`
     addTodo(text: String!): Todo!
     deleteTodo(id: Int!): Boolean!
     toggleTodo(id: Int!): Todo!
+    addSuggestion(id: Int!, suggestion: [String]!): Todo!
   }
 `

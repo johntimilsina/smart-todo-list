@@ -44,6 +44,8 @@ export async function POST(req: Request) {
       .map((s) => s.replace(/^- /, "").trim()) // Remove "- " prefix and trim whitespace
       .filter((s) => s.length > 0) // Filter out any empty lines
 
+    console.log('suggestions', suggestions)
+
     return NextResponse.json({ suggestions })
   } catch (error) {
     console.error("Error calling Gemini API:", error)

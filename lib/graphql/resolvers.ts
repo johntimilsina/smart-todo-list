@@ -19,5 +19,14 @@ export const resolvers = {
         data: { completed: !todo?.completed },
       })
     },
+    addSuggestion: async (
+      _: any,
+      { id, suggestion }: { id: number; suggestion: string[] }
+    ) => {
+      return prisma.todo.update({
+        where: { id },
+        data: { suggestion },
+      })
+    },
   },
 }
