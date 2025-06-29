@@ -35,6 +35,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  DragOverlay,
 } from "@dnd-kit/core"
 import {
   arrayMove,
@@ -85,119 +86,126 @@ function SortableTodoItem({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`flex items-center gap-4 ${isDragging ? "opacity-50" : ""}`}
+      className={`${isDragging ? "opacity-50 scale-105 rotate-2 z-50" : ""}`}
     >
-      <div
-        {...attributes}
-        {...listeners}
-        className="flex-shrink-0 p-2 cursor-grab active:cursor-grabbing hover:bg-muted rounded-md transition-colors"
+      <Card
+        className={`cursor-pointer hover:shadow-md transition-all duration-200 ${
+          isDragging ? "shadow-2xl border-primary/50" : ""
+        }`}
+        onClick={(e) => {
+          e.stopPropagation()
+          handleToggle(todo.id)
+        }}
       >
-        <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-      </div>
-
-      <div className="flex-1">
-        <Card
-          className="hover:shadow-md transition-shadow duration-200 cursor-pointer"
-          onClick={() => handleToggle(todo.id)}
-        >
-          <CardContent className="p-0">
-            <div className="p-4 transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <div>
-                  <div
-                    className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      todo.completed
-                        ? "bg-primary border-primary"
-                        : "border-muted-foreground hover:border-primary"
-                    }`}
-                  >
-                    {todo.completed && (
-                      <Check className="h-3 w-3 text-primary-foreground" />
-                    )}
-                  </div>
-                </div>
-
-                <span
-                  className={`flex-1 text-base select-none cursor-pointer transition-all ${
-                    todo.completed ? "line-through text-muted-foreground" : ""
-                  }`}
-                  onClick={() => handleToggle(todo.id)}
-                >
-                  {todo.text}
-                </span>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => handleSuggestSubtasks(todo.id, e)}
-                  disabled={loadingSuggestions === todo.id}
-                  className="min-w-[110px] justify-between h-8"
-                >
-                  <div className="flex items-center gap-2">
-                    {loadingSuggestions === todo.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3 w-3" />
-                    )}
-                    <span className="text-xs">
-                      {todo.suggestion && todo.suggestion.length > 0
-                        ? "View"
-                        : "Suggest"}
-                    </span>
-                  </div>
-                  {todo.suggestion && todo.suggestion.length > 0 && (
-                    <div className="flex-shrink-0 ml-1">
-                      {expandedSuggestions === todo.id ? (
-                        <ChevronUp className="h-3 w-3" />
-                      ) : (
-                        <ChevronDown className="h-3 w-3" />
-                      )}
-                    </div>
-                  )}
-                </Button>
-
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={(e) => handleDelete(todo.id, e)}
-                  className="flex-shrink-0 w-8 h-8 p-0"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+        <CardContent className="p-0">
+          <div className="p-4 transition-colors duration-150">
+            <div className="flex items-center gap-3">
+              <div
+                {...attributes}
+                {...listeners}
+                className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded-md transition-colors touch-none"
+              >
+                <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
               </div>
-            </div>
 
-            {expandedSuggestions === todo.id &&
-              todo.suggestion &&
-              todo.suggestion.length > 0 && (
-                <div className="border-t bg-muted/30">
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        AI Suggestions
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {todo.suggestion.map(
-                        (suggestion: string, index: number) => (
-                          <Card key={index} className="bg-background">
-                            <CardContent className="p-3">
-                              <div className="text-sm">
-                                <span className="font-medium mr-2">•</span>
-                                {suggestion}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      )}
-                    </div>
+              <div className="">
+                <div
+                  className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    todo.completed
+                      ? "bg-primary border-primary"
+                      : "border-muted-foreground hover:border-primary"
+                  }`}
+                >
+                  {todo.completed && (
+                    <Check className="h-3 w-3 text-primary-foreground" />
+                  )}
+                </div>
+              </div>
+
+              {/* Task Text */}
+              <span
+                className={`flex-1 text-base select-none cursor-pointer transition-all ${
+                  todo.completed ? "line-through text-muted-foreground" : ""
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleToggle(todo.id)
+                }}
+              >
+                {todo.text}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => handleSuggestSubtasks(todo.id, e)}
+                disabled={loadingSuggestions === todo.id}
+                className="min-w-[110px] justify-between h-8"
+              >
+                <div className="flex items-center gap-2">
+                  {loadingSuggestions === todo.id ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  <span className="text-xs">
+                    {todo.suggestion && todo.suggestion.length > 0
+                      ? "View"
+                      : "Suggest"}
+                  </span>
+                </div>
+                {todo.suggestion && todo.suggestion.length > 0 && (
+                  <div className="flex-shrink-0 ml-1">
+                    {expandedSuggestions === todo.id ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    )}
+                  </div>
+                )}
+              </Button>
+
+
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={(e) => handleDelete(todo.id, e)}
+                className="flex-shrink-0 w-8 h-8 p-0"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+
+   
+          {expandedSuggestions === todo.id &&
+            todo.suggestion &&
+            todo.suggestion.length > 0 && (
+              <div className="border-t bg-muted/30">
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="text-sm font-medium">AI Suggestions</span>
+                  </div>
+                  <div className="space-y-2">
+                    {todo.suggestion.map(
+                      (suggestion: string, index: number) => (
+                        <Card key={index} className="bg-background">
+                          <CardContent className="p-3">
+                            <div className="text-sm">
+                              <span className="font-medium mr-2">•</span>
+                              {suggestion}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    )}
                   </div>
                 </div>
-              )}
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            )}
+        </CardContent>
+      </Card>
     </motion.div>
   )
 }
@@ -209,6 +217,7 @@ export default function Page() {
   const [toggleTodo] = useToggleTodoMutation()
   const [addSuggestion] = useAddSuggestionMutation()
   const [reorderTodos] = useReorderTodosMutation()
+
   const [text, setText] = useState("")
   const [loadingSuggestions, setLoadingSuggestions] = useState<number | null>(
     null
@@ -216,6 +225,7 @@ export default function Page() {
   const [expandedSuggestions, setExpandedSuggestions] = useState<number | null>(
     null
   )
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -230,6 +240,7 @@ export default function Page() {
 
   const handleAdd = async () => {
     if (!text.trim()) return
+
     try {
       await addTodo({ variables: { text } })
       setText("")
@@ -283,12 +294,16 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: todo.text }),
       })
+
       if (!response.ok) throw new Error("Failed to fetch suggestions")
+
       const dataRes = await response.json()
       const { suggestions } = dataRes
+
       await addSuggestion({
         variables: { id: todoId, suggestion: suggestions },
       })
+
       refetch()
       setExpandedSuggestions(todoId)
       toast.success("AI suggestions generated!")
@@ -300,8 +315,13 @@ export default function Page() {
     }
   }
 
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id)
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
+    setActiveId(null)
 
     if (!over || active.id === over.id) {
       return
@@ -313,7 +333,6 @@ export default function Page() {
 
     if (oldIndex !== -1 && newIndex !== -1) {
       const newTodos = arrayMove(todos, oldIndex, newIndex)
-
       try {
         const todoIds = newTodos.map((todo) => todo.id)
         await reorderTodos({ variables: { todoIds } })
@@ -364,6 +383,8 @@ export default function Page() {
       })
     : []
 
+  const activeTodo = todos.find((todo) => todo.id.toString() === activeId)
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -385,39 +406,34 @@ export default function Page() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="mb-10"
         >
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 w-9"></div>
-
-            <div className="flex-1">
-              <Card className="border-2 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="flex gap-4">
-                    <Input
-                      placeholder="What needs to be done?"
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleAdd()}
-                      className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
-                    />
-                    <Button
-                      onClick={handleAdd}
-                      size="lg"
-                      className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                      <Plus className="h-6 w-6 mr-2" />
-                      Add Task
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <Card className="border-2 shadow-lg">
+            <CardContent className="p-8">
+              <div className="flex gap-4">
+                <Input
+                  placeholder="What needs to be done?"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleAdd()}
+                  className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
+                />
+                <Button
+                  onClick={handleAdd}
+                  size="lg"
+                  className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Plus className="h-6 w-6 mr-2" />
+                  Add Task
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {todos.length > 0 && (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -439,6 +455,38 @@ export default function Page() {
                 ))}
               </div>
             </SortableContext>
+
+            <DragOverlay>
+              {activeId && activeTodo ? (
+                <Card className="shadow-2xl border-primary/50 opacity-95 rotate-2">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <GripVertical className="h-5 w-5 text-muted-foreground" />
+                      <div
+                        className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          activeTodo.completed
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground"
+                        }`}
+                      >
+                        {activeTodo.completed && (
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        )}
+                      </div>
+                      <span
+                        className={`flex-1 text-base ${
+                          activeTodo.completed
+                            ? "line-through text-muted-foreground"
+                            : ""
+                        }`}
+                      >
+                        {activeTodo.text}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
+            </DragOverlay>
           </DndContext>
         )}
 
