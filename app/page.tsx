@@ -163,7 +163,7 @@ export default function Page() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="mb-10"
         >
-          <Card className="border-2 border-primary/20 shadow-lg bg-gradient-to-r from-background to-muted/30">
+          <Card className="border-2 shadow-lg">
             <CardContent className="p-8">
               <div className="flex gap-4">
                 <Input
@@ -171,7 +171,7 @@ export default function Page() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleAdd()}
-                  className="flex-1 h-12 text-lg border-2 focus:border-primary"
+                  className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
                 />
                 <Button
                   onClick={handleAdd}
@@ -194,12 +194,12 @@ export default function Page() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <Card className="hover:shadow-md transition-shadow duration-200">
+              <Card
+                className="hover:shadow-md cursor-pointer transition-shadow duration-200 hover:bg-muted/20"
+                onClick={() => handleToggle(todo.id)}
+              >
                 <CardContent className="p-0">
-                  <div
-                    className="p-4 cursor-pointer hover:bg-muted/20 transition-colors duration-150"
-                    onClick={() => handleToggle(todo.id)}
-                  >
+                  <div className="p-4 transition-colors duration-150">
                     <div className="flex items-center gap-3">
                       <div
                         className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
