@@ -1,7 +1,9 @@
 "use client"
 
-import { gql, useQuery, useMutation } from "@apollo/client"
+import type React from "react"
 import { useState } from "react"
+import { gql, useQuery, useMutation } from "@apollo/client"
+
 import {
   Plus,
   Trash2,
@@ -11,8 +13,12 @@ import {
   ChevronUp,
   Loader2,
 } from "lucide-react"
+
 import { motion } from "framer-motion"
 import { toast } from "sonner"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 const GET_TODOS = gql`
   query {
@@ -80,7 +86,8 @@ export default function Page() {
     }
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       await deleteTodo({ variables: { id } })
       refetch()
@@ -105,7 +112,8 @@ export default function Page() {
     }
   }
 
-  const handleSuggestSubtasks = async (todoId: number) => {
+  const handleSuggestSubtasks = async (todoId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
     const todo = data.todos.find((t: { id: number }) => t.id === todoId)
     if (!todo) return
 
@@ -140,11 +148,11 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center space-x-3 text-black"
+          className="flex items-center space-x-3"
         >
           <Loader2 className="h-6 w-6 animate-spin" />
           <span className="text-lg font-medium">Loading your tasks...</span>
@@ -155,11 +163,11 @@ export default function Page() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-red-600 text-center"
+          className="text-destructive text-center"
         >
           <p className="text-lg">Error: {error.message}</p>
         </motion.div>
@@ -168,156 +176,163 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl font-bold text-black mb-2">Smart Todo</h1>
-          <p className="text-gray-600 text-lg">AI-powered task management</p>
+          <h1 className="text-4xl font-bold mb-2">Smart Todo</h1>
+          <p className="text-muted-foreground text-lg">
+            AI-powered task management
+          </p>
         </motion.div>
 
-        {/* Add Todo Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-8"
+          className="mb-10"
         >
-          <div className="flex gap-3">
-            <input
-              className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all duration-200"
-              placeholder="What needs to be done?"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAdd()}
-            />
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleAdd}
-              className="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center"
-            >
-              <Plus className="h-5 w-5" />
-            </motion.button>
-          </div>
+          <Card className="border-2 border-primary/20 shadow-lg bg-gradient-to-r from-background to-muted/30">
+            <CardContent className="p-8">
+              <div className="flex gap-4">
+                <Input
+                  placeholder="What needs to be done?"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleAdd()}
+                  className="flex-1 h-12 text-lg border-2 focus:border-primary"
+                />
+                <Button
+                  onClick={handleAdd}
+                  size="lg"
+                  className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Plus className="h-6 w-6 mr-2" />
+                  Add Task
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
-        {/* Todo List */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {data.todos.map((todo: any, index: number) => (
             <motion.div
               key={todo.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 transition-colors duration-200"
             >
-              <div className="p-6">
-                <div className="flex items-center gap-4">
-                  {/* Complete Button - No Animation */}
-                  <button
+              <Card className="hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-0">
+                  <div
+                    className="p-4 cursor-pointer hover:bg-muted/20 transition-colors duration-150"
                     onClick={() => handleToggle(todo.id)}
-                    className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-100 ${
-                      todo.completed
-                        ? "bg-black border-black"
-                        : "border-gray-300 hover:border-black"
-                    }`}
                   >
-                    {todo.completed && <Check className="h-3 w-3 text-white" />}
-                  </button>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          todo.completed
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground"
+                        }`}
+                      >
+                        {todo.completed && (
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        )}
+                      </div>
 
-                  {/* Todo Text */}
-                  <span
-                    className={`flex-1 text-lg transition-all duration-200 ${
-                      todo.completed
-                        ? "line-through text-gray-500"
-                        : "text-black"
-                    }`}
-                  >
-                    {todo.text}
-                  </span>
-
-                  {/* AI Suggestions Button - Fixed Width */}
-                  <button
-                    onClick={() => handleSuggestSubtasks(todo.id)}
-                    disabled={loadingSuggestions === todo.id}
-                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-black px-4 py-2 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-32 justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      {loadingSuggestions === todo.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4" />
-                      )}
-                      <span className="text-sm">
-                        {todo.suggestion && todo.suggestion.length > 0
-                          ? "View"
-                          : "Suggest"}
+                      <span
+                        className={`flex-1 text-base select-none ${
+                          todo.completed
+                            ? "line-through text-muted-foreground"
+                            : ""
+                        }`}
+                      >
+                        {todo.text}
                       </span>
-                    </div>
-                    {todo.suggestion && todo.suggestion.length > 0 && (
-                      <div className="flex-shrink-0">
-                        {expandedSuggestions === todo.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </div>
-                    )}
-                  </button>
 
-                  {/* Delete Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleDelete(todo.id)}
-                    className="flex-shrink-0 w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 flex items-center justify-center transition-all duration-200"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </motion.button>
-                </div>
-              </div>
-
-              {/* Suggestions Panel - No Layout Shift */}
-              {expandedSuggestions === todo.id &&
-                todo.suggestion &&
-                todo.suggestion.length > 0 && (
-                  <div className="border-t border-gray-200 bg-gray-50">
-                    <div className="p-6">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Sparkles className="h-4 w-4 text-black" />
-                        <span className="text-sm font-medium text-black">
-                          AI Suggestions
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        {todo.suggestion.map(
-                          (suggestion: string, index: number) => (
-                            <div
-                              key={index}
-                              className="bg-white border border-gray-200 rounded-lg p-3 text-gray-700 text-sm hover:bg-gray-50 transition-colors duration-200"
-                            >
-                              <span className="text-black font-medium mr-2">
-                                •
-                              </span>
-                              {suggestion}
-                            </div>
-                          )
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => handleSuggestSubtasks(todo.id, e)}
+                        disabled={loadingSuggestions === todo.id}
+                        className="min-w-[110px] justify-between h-8"
+                      >
+                        <div className="flex items-center gap-2">
+                          {loadingSuggestions === todo.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3" />
+                          )}
+                          <span className="text-xs">
+                            {todo.suggestion && todo.suggestion.length > 0
+                              ? "View"
+                              : "Suggest"}
+                          </span>
+                        </div>
+                        {todo.suggestion && todo.suggestion.length > 0 && (
+                          <div className="flex-shrink-0 ml-1">
+                            {expandedSuggestions === todo.id ? (
+                              <ChevronUp className="h-3 w-3" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3" />
+                            )}
+                          </div>
                         )}
-                      </div>
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => handleDelete(todo.id, e)}
+                        className="flex-shrink-0 w-8 h-8 p-0 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
-                )}
+
+                  {expandedSuggestions === todo.id &&
+                    todo.suggestion &&
+                    todo.suggestion.length > 0 && (
+                      <div className="border-t bg-muted/30">
+                        <div className="p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              AI Suggestions
+                            </span>
+                          </div>
+                          <div className="space-y-2">
+                            {todo.suggestion.map(
+                              (suggestion: string, index: number) => (
+                                <Card key={index} className="bg-background">
+                                  <CardContent className="p-3">
+                                    <div className="text-sm">
+                                      <span className="font-medium mr-2">
+                                        •
+                                      </span>
+                                      {suggestion}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </div>
 
-        {/* Empty State */}
         {data.todos.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -329,14 +344,12 @@ export default function Page() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"
+              className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"
             >
-              <Sparkles className="h-8 w-8 text-black" />
+              <Sparkles className="h-8 w-8" />
             </motion.div>
-            <h3 className="text-xl font-medium text-black mb-2">
-              No tasks yet
-            </h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-medium mb-2">No tasks yet</h3>
+            <p className="text-muted-foreground">
               Add your first task to get started with AI-powered suggestions
             </p>
           </motion.div>
