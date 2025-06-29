@@ -2,7 +2,14 @@
 
 import type React from "react"
 import { useState } from "react"
-import { gql, useQuery, useMutation } from "@apollo/client"
+
+import {
+  useGetTodosQuery,
+  useAddTodoMutation,
+  useDeleteTodoMutation,
+  useToggleTodoMutation,
+  useAddSuggestionMutation,
+} from "@/lib/graphql/generated/graphql"
 
 import {
   Plus,
@@ -20,52 +27,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-const GET_TODOS = gql`
-  query {
-    todos {
-      id
-      text
-      completed
-      suggestion
-    }
-  }
-`
-const ADD_TODO = gql`
-  mutation ($text: String!) {
-    addTodo(text: $text) {
-      id
-      text
-    }
-  }
-`
-const DELETE_TODO = gql`
-  mutation ($id: Int!) {
-    deleteTodo(id: $id)
-  }
-`
-const TOGGLE_TODO = gql`
-  mutation ($id: Int!) {
-    toggleTodo(id: $id) {
-      id
-      completed
-    }
-  }
-`
-const ADD_SUGGESTION = gql`
-  mutation ($id: Int!, $suggestion: [String]!) {
-    addSuggestion(id: $id, suggestion: $suggestion) {
-      id
-      suggestion
-    }
-  }
-`
-
 export default function Page() {
-  const { data, loading, error, refetch } = useQuery(GET_TODOS)
-  const [addTodo] = useMutation(ADD_TODO)
-  const [deleteTodo] = useMutation(DELETE_TODO)
-  const [toggleTodo] = useMutation(TOGGLE_TODO)
-  const [addSuggestion] = useMutation(ADD_SUGGESTION)
+  const { data, loading, error, refetch } = useGetTodosQuery()
+  const [addTodo] = useAddTodoMutation()
+  const [deleteTodo] = useDeleteTodoMutation()
+  const [toggleTodo] = useToggleTodoMutation()
+  const [addSuggestion] = useAddSuggestionMutation()
   const [text, setText] = useState("")
   const [loadingSuggestions, setLoadingSuggestions] = useState<number | null>(
     null
@@ -98,7 +65,7 @@ export default function Page() {
   }
 
   const handleToggle = async (id: number) => {
-    const todo = data.todos.find((t: { id: number }) => t.id === id)
+    const todo = data?.todos.find((t: { id: number }) => t.id === id)
     try {
       await toggleTodo({ variables: { id } })
       refetch()
@@ -114,7 +81,7 @@ export default function Page() {
 
   const handleSuggestSubtasks = async (todoId: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    const todo = data.todos.find((t: { id: number }) => t.id === todoId)
+    const todo = data?.todos.find((t: { id: number }) => t.id === todoId)
     if (!todo) return
 
     if (todo.suggestion && todo.suggestion.length > 0) {
@@ -220,7 +187,7 @@ export default function Page() {
         </motion.div>
 
         <div className="space-y-4">
-          {data.todos.map((todo: any, index: number) => (
+          {data?.todos.map((todo: any, index: number) => (
             <motion.div
               key={todo.id}
               initial={{ opacity: 0, y: 20 }}
@@ -333,7 +300,7 @@ export default function Page() {
           ))}
         </div>
 
-        {data.todos.length === 0 && (
+        {data?.todos.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

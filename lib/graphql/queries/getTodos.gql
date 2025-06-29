@@ -1,0 +1,8 @@
+query getTodos {
+  todos {
+    id
+    text
+    completed
+    suggestion
+  }
+}

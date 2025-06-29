@@ -1,0 +1,6 @@
+mutation addSuggestion($id: Int!, $suggestion: [String]!) {
+  addSuggestion(id: $id, suggestion: $suggestion) {
+    id
+    suggestion
+  }
+}
