@@ -22,6 +22,7 @@ export type Mutation = {
   addSuggestion: Todo;
   addTodo: Todo;
   deleteTodo: Scalars['Boolean']['output'];
+  reorderTodos: Array<Todo>;
   toggleTodo: Todo;
 };
 
@@ -42,6 +43,11 @@ export type MutationDeleteTodoArgs = {
 };
 
 
+export type MutationReorderTodosArgs = {
+  todoIds: Array<Scalars['Int']['input']>;
+};
+
+
 export type MutationToggleTodoArgs = {
   id: Scalars['Int']['input'];
 };
@@ -56,6 +62,7 @@ export type Todo = {
   completed: Scalars['Boolean']['output'];
   createdAt: Scalars['String']['output'];
   id: Scalars['Int']['output'];
+  order: Scalars['Int']['output'];
   suggestion?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   text: Scalars['String']['output'];
 };
@@ -82,6 +89,13 @@ export type DeleteTodoMutationVariables = Exact<{
 
 export type DeleteTodoMutation = { __typename?: 'Mutation', deleteTodo: boolean };
 
+export type ReorderTodosMutationVariables = Exact<{
+  todoIds: Array<Scalars['Int']['input']> | Scalars['Int']['input'];
+}>;
+
+
+export type ReorderTodosMutation = { __typename?: 'Mutation', reorderTodos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, order: number, suggestion?: Array<string | null> | null, createdAt: string }> };
+
 export type ToggleTodoMutationVariables = Exact<{
   id: Scalars['Int']['input'];
 }>;
@@ -92,7 +106,7 @@ export type ToggleTodoMutation = { __typename?: 'Mutation', toggleTodo: { __type
 export type GetTodosQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetTodosQuery = { __typename?: 'Query', todos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, suggestion?: Array<string | null> | null }> };
+export type GetTodosQuery = { __typename?: 'Query', todos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, suggestion?: Array<string | null> | null, order: number }> };
 
 
 export const AddSuggestionDocument = gql`
@@ -195,6 +209,44 @@ export function useDeleteTodoMutation(baseOptions?: Apollo.MutationHookOptions<D
 export type DeleteTodoMutationHookResult = ReturnType<typeof useDeleteTodoMutation>;
 export type DeleteTodoMutationResult = Apollo.MutationResult<DeleteTodoMutation>;
 export type DeleteTodoMutationOptions = Apollo.BaseMutationOptions<DeleteTodoMutation, DeleteTodoMutationVariables>;
+export const ReorderTodosDocument = gql`
+    mutation ReorderTodos($todoIds: [Int!]!) {
+  reorderTodos(todoIds: $todoIds) {
+    id
+    text
+    completed
+    order
+    suggestion
+    createdAt
+  }
+}
+    `;
+export type ReorderTodosMutationFn = Apollo.MutationFunction<ReorderTodosMutation, ReorderTodosMutationVariables>;
+
+/**
+ * __useReorderTodosMutation__
+ *
+ * To run a mutation, you first call `useReorderTodosMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useReorderTodosMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [reorderTodosMutation, { data, loading, error }] = useReorderTodosMutation({
+ *   variables: {
+ *      todoIds: // value for 'todoIds'
+ *   },
+ * });
+ */
+export function useReorderTodosMutation(baseOptions?: Apollo.MutationHookOptions<ReorderTodosMutation, ReorderTodosMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ReorderTodosMutation, ReorderTodosMutationVariables>(ReorderTodosDocument, options);
+      }
+export type ReorderTodosMutationHookResult = ReturnType<typeof useReorderTodosMutation>;
+export type ReorderTodosMutationResult = Apollo.MutationResult<ReorderTodosMutation>;
+export type ReorderTodosMutationOptions = Apollo.BaseMutationOptions<ReorderTodosMutation, ReorderTodosMutationVariables>;
 export const ToggleTodoDocument = gql`
     mutation toggleTodo($id: Int!) {
   toggleTodo(id: $id) {
@@ -236,6 +288,7 @@ export const GetTodosDocument = gql`
     text
     completed
     suggestion
+    order
   }
 }
     `;

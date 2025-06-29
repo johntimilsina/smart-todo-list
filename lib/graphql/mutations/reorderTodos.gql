@@ -1,0 +1,10 @@
+mutation ReorderTodos($todoIds: [Int!]!) {
+  reorderTodos(todoIds: $todoIds) {
+    id
+    text
+    completed
+    order
+    suggestion
+    createdAt
+  }
+}

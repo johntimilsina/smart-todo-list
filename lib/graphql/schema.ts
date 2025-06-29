@@ -7,6 +7,7 @@ export const typeDefs = gql`
     completed: Boolean!
     createdAt: String!
     suggestion: [String]
+    order: Int!
   }
 
   type Query {
@@ -18,5 +19,6 @@ export const typeDefs = gql`
     deleteTodo(id: Int!): Boolean!
     toggleTodo(id: Int!): Todo!
     addSuggestion(id: Int!, suggestion: [String]!): Todo!
+    reorderTodos(todoIds: [Int!]!): [Todo!]!
   }
 `

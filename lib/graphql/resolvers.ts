@@ -28,5 +28,21 @@ export const resolvers = {
         data: { suggestion },
       })
     },
+    reorderTodos: async (_: any, { todoIds }: { todoIds: number[] }) => {
+      // Update each todo with its new order position
+      const updatePromises = todoIds.map((id, index) =>
+        prisma.todo.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+
+      await Promise.all(updatePromises)
+
+      // Return all todos in the new order
+      return prisma.todo.findMany({
+        orderBy: { order: "asc" },
+      })
+    },
   },
 }

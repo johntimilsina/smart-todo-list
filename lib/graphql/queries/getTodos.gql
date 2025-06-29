@@ -4,5 +4,6 @@ query getTodos {
     text
     completed
     suggestion
+    order
   }
 }
