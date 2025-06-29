@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState } from "react"
-
 import {
   useGetTodosQuery,
   useAddTodoMutation,
@@ -11,7 +10,6 @@ import {
   useAddSuggestionMutation,
   useReorderTodosMutation,
 } from "@/lib/graphql/generated/graphql"
-
 import {
   Plus,
   Trash2,
@@ -46,6 +44,7 @@ import {
 } from "@dnd-kit/sortable"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { Header } from "@/components/header"
 
 function SortableTodoItem({
   todo,
@@ -214,8 +213,10 @@ function SortableTodoItem({
                           (suggestion: string, index: number) => (
                             <Card key={index} className="bg-background/50">
                               <CardContent className="p-3">
-                                <div className="text-sm">
-                                  <span className="mr-2">•</span>
+                                <div className="text-sm text-muted-foreground">
+                                  <span className="font-medium text-foreground mr-2">
+                                    •
+                                  </span>
                                   {suggestion}
                                 </div>
                               </CardContent>
@@ -412,135 +413,138 @@ export default function Page() {
   const activeTodo = todos.find((todo) => todo.id.toString() === activeId)
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-4xl font-bold mb-2">Smart Todo</h1>
-          <p className="text-muted-foreground text-lg">
-            AI-powered task management
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-10"
-        >
-          <Card className="border-2 shadow-lg">
-            <CardContent className="p-8">
-              <div className="flex gap-4">
-                <Input
-                  placeholder="What needs to be done?"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleAdd()}
-                  className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
-                />
-                <Button
-                  onClick={handleAdd}
-                  size="lg"
-                  className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <Plus className="h-6 w-6 mr-2" />
-                  Add Task
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {todos.length > 0 && (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
+      <main className="flex-1">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
           >
-            <SortableContext
-              items={todos.map((todo) => todo.id.toString())}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-4">
-                {todos.map((todo: any, index: number) => (
-                  <SortableTodoItem
-                    key={todo.id}
-                    todo={todo}
-                    index={index}
-                    handleToggle={handleToggle}
-                    handleSuggestSubtasks={handleSuggestSubtasks}
-                    handleDelete={handleDelete}
-                    loadingSuggestions={loadingSuggestions}
-                    expandedSuggestions={expandedSuggestions}
-                    isOver={overId === todo.id.toString()}
-                    isDragging={activeId === todo.id.toString()}
-                  />
-                ))}
-              </div>
-            </SortableContext>
+            <h1 className="text-4xl font-bold mb-2">Smart Todo</h1>
+            <p className="text-muted-foreground text-lg">
+              AI-powered task management
+            </p>
+          </motion.div>
 
-            <DragOverlay>
-              {activeId && activeTodo ? (
-                <Card className="shadow-2xl border-primary/50 opacity-95 rotate-2">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="h-5 w-5 text-muted-foreground" />
-                      <div
-                        className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                          activeTodo.completed
-                            ? "bg-primary border-primary"
-                            : "border-muted-foreground"
-                        }`}
-                      >
-                        {activeTodo.completed && (
-                          <Check className="h-3 w-3 text-primary-foreground" />
-                        )}
-                      </div>
-                      <span
-                        className={`flex-1 text-base ${
-                          activeTodo.completed
-                            ? "line-through text-muted-foreground"
-                            : ""
-                        }`}
-                      >
-                        {activeTodo.text}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        )}
-
-        {todos.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center py-16"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mb-10"
           >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"
-            >
-              <Sparkles className="h-8 w-8" />
-            </motion.div>
-            <h3 className="text-xl font-medium mb-2">No tasks yet</h3>
-            <p className="text-muted-foreground">
-              Add your first task to get started with AI-powered suggestions
-            </p>
+            <Card className="border-2 shadow-lg">
+              <CardContent className="p-8">
+                <div className="flex gap-4">
+                  <Input
+                    placeholder="What needs to be done?"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleAdd()}
+                    className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
+                  />
+                  <Button
+                    onClick={handleAdd}
+                    size="lg"
+                    className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Plus className="h-6 w-6 mr-2" />
+                    Add Task
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
-        )}
-      </div>
+
+          {todos.length > 0 && (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={todos.map((todo) => todo.id.toString())}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-4">
+                  {todos.map((todo: any, index: number) => (
+                    <SortableTodoItem
+                      key={todo.id}
+                      todo={todo}
+                      index={index}
+                      handleToggle={handleToggle}
+                      handleSuggestSubtasks={handleSuggestSubtasks}
+                      handleDelete={handleDelete}
+                      loadingSuggestions={loadingSuggestions}
+                      expandedSuggestions={expandedSuggestions}
+                      isOver={overId === todo.id.toString()}
+                      isDragging={activeId === todo.id.toString()}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+
+              <DragOverlay>
+                {activeId && activeTodo ? (
+                  <Card className="shadow-2xl border-primary/50 opacity-95 rotate-2">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <GripVertical className="h-5 w-5 text-muted-foreground" />
+                        <div
+                          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                            activeTodo.completed
+                              ? "bg-primary border-primary"
+                              : "border-muted-foreground"
+                          }`}
+                        >
+                          {activeTodo.completed && (
+                            <Check className="h-3 w-3 text-primary-foreground" />
+                          )}
+                        </div>
+                        <span
+                          className={`flex-1 text-base ${
+                            activeTodo.completed
+                              ? "line-through text-muted-foreground"
+                              : ""
+                          }`}
+                        >
+                          {activeTodo.text}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          )}
+
+          {todos.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-center py-16"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <Sparkles className="h-8 w-8" />
+              </motion.div>
+              <h3 className="text-xl font-medium mb-2">No tasks yet</h3>
+              <p className="text-muted-foreground">
+                Add your first task to get started with AI-powered suggestions
+              </p>
+            </motion.div>
+          )}
+        </div>
+      </main>
     </div>
   )
 }
