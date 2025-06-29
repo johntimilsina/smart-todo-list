@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -12,9 +13,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
+
+  const [mounted, setMounted] = useState(false)
+
+  // useEffect only runs on the client, so we can safely show the UI
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <Skeleton className="h-10 w-10 rounded-md" />
+  }
 
   return (
     <DropdownMenu>

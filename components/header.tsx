@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Github } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserNav } from "@/components/user-nav"
@@ -12,6 +13,13 @@ export function Header() {
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="ml-10 flex items-center">
           <Link href="/" className="mr-6 flex items-center space-x-2">
+            <Image
+              src={"/logo.png"}
+              alt="logo"
+              width={42}
+              height={42}
+              unoptimized
+            />
             <span className="hidden font-bold sm:inline-block">Smart Todo</span>
           </Link>
         </div>
