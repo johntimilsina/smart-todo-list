@@ -254,10 +254,10 @@ export default function Page() {
                       </Button>
 
                       <Button
-                        variant="outline"
+                        variant="destructive"
                         size="sm"
                         onClick={(e) => handleDelete(todo.id, e)}
-                        className="flex-shrink-0 w-8 h-8 p-0 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        className="flex-shrink-0 w-8 h-8 p-0"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
