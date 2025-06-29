@@ -22,7 +22,7 @@ import {
   Loader2,
   GripVertical,
 } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,7 @@ import {
   useSensors,
   type DragEndEvent,
   DragOverlay,
+  type DragOverEvent,
 } from "@dnd-kit/core"
 import {
   arrayMove,
@@ -54,6 +55,8 @@ function SortableTodoItem({
   handleDelete,
   loadingSuggestions,
   expandedSuggestions,
+  isOver,
+  isDragging,
 }: {
   todo: any
   index: number
@@ -62,151 +65,172 @@ function SortableTodoItem({
   handleDelete: (id: number, e: React.MouseEvent) => void
   loadingSuggestions: number | null
   expandedSuggestions: number | null
+  isOver: boolean
+  isDragging: boolean
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: todo.id.toString(),
-  })
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: todo.id.toString(),
+    })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: transition || "transform 250ms ease-in-out",
   }
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`${isDragging ? "opacity-50 scale-105 rotate-2 z-50" : ""}`}
-    >
-      <Card
-        className={`cursor-pointer hover:shadow-md transition-all duration-200 ${
-          isDragging ? "shadow-2xl border-primary/50" : ""
-        }`}
-        onClick={(e) => {
-          e.stopPropagation()
-          handleToggle(todo.id)
-        }}
+    <div className="relative">
+      {isOver && !isDragging && (
+        <motion.div
+          layoutId="drop-indicator"
+          className="absolute inset-x-0 top-0 h-1 bg-primary rounded-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+      )}
+      <motion.div
+        ref={setNodeRef}
+        style={style}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        className={isDragging ? "z-50" : "z-0"}
       >
-        <CardContent className="p-0">
-          <div className="p-4 transition-colors duration-150">
-            <div className="flex items-center gap-3">
-              <div
-                {...attributes}
-                {...listeners}
-                className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded-md transition-colors touch-none"
-              >
-                <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-              </div>
-
-              <div className="">
+        <Card
+          className={`transition-all duration-200 ${
+            isDragging
+              ? "shadow-2xl scale-105 border-primary/50"
+              : "hover:shadow-md"
+          } ${expandedSuggestions === todo.id ? "" : "cursor-pointer"}`}
+          onClick={() => {
+            if (expandedSuggestions !== todo.id) {
+              handleToggle(todo.id)
+            }
+          }}
+        >
+          <CardContent className="p-0">
+            <div className="p-4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
                 <div
-                  className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    todo.completed
-                      ? "bg-primary border-primary"
-                      : "border-muted-foreground hover:border-primary"
+                  {...attributes}
+                  {...listeners}
+                  className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded-md transition-colors touch-none"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+                </div>
+
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleToggle(todo.id)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <div
+                    className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      todo.completed
+                        ? "bg-primary border-primary"
+                        : "border-muted-foreground hover:border-primary"
+                    }`}
+                  >
+                    {todo.completed && (
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    )}
+                  </div>
+                </div>
+
+                <span
+                  className={`flex-1 text-base select-none transition-all ${
+                    todo.completed ? "line-through text-muted-foreground" : ""
                   }`}
                 >
-                  {todo.completed && (
-                    <Check className="h-3 w-3 text-primary-foreground" />
-                  )}
-                </div>
-              </div>
+                  {todo.text}
+                </span>
 
-              {/* Task Text */}
-              <span
-                className={`flex-1 text-base select-none cursor-pointer transition-all ${
-                  todo.completed ? "line-through text-muted-foreground" : ""
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleToggle(todo.id)
-                }}
-              >
-                {todo.text}
-              </span>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => handleSuggestSubtasks(todo.id, e)}
-                disabled={loadingSuggestions === todo.id}
-                className="min-w-[110px] justify-between h-8"
-              >
-                <div className="flex items-center gap-2">
-                  {loadingSuggestions === todo.id ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3 w-3" />
-                  )}
-                  <span className="text-xs">
-                    {todo.suggestion && todo.suggestion.length > 0
-                      ? "View"
-                      : "Suggest"}
-                  </span>
-                </div>
-                {todo.suggestion && todo.suggestion.length > 0 && (
-                  <div className="flex-shrink-0 ml-1">
-                    {expandedSuggestions === todo.id ? (
-                      <ChevronUp className="h-3 w-3" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => handleSuggestSubtasks(todo.id, e)}
+                  disabled={loadingSuggestions === todo.id}
+                  className="min-w-[110px] justify-between h-8"
+                >
+                  <div className="flex items-center gap-2">
+                    {loadingSuggestions === todo.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
-                      <ChevronDown className="h-3 w-3" />
+                      <Sparkles className="h-3 w-3" />
                     )}
+                    <span className="text-xs">
+                      {todo.suggestion && todo.suggestion.length > 0
+                        ? "View"
+                        : "Suggest"}
+                    </span>
                   </div>
-                )}
-              </Button>
+                  {todo.suggestion && todo.suggestion.length > 0 && (
+                    <div className="flex-shrink-0 ml-1">
+                      {expandedSuggestions === todo.id ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
+                    </div>
+                  )}
+                </Button>
 
-
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={(e) => handleDelete(todo.id, e)}
-                className="flex-shrink-0 w-8 h-8 p-0"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-
-   
-          {expandedSuggestions === todo.id &&
-            todo.suggestion &&
-            todo.suggestion.length > 0 && (
-              <div className="border-t bg-muted/30">
-                <div className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="text-sm font-medium">AI Suggestions</span>
-                  </div>
-                  <div className="space-y-2">
-                    {todo.suggestion.map(
-                      (suggestion: string, index: number) => (
-                        <Card key={index} className="bg-background">
-                          <CardContent className="p-3">
-                            <div className="text-sm">
-                              <span className="font-medium mr-2">•</span>
-                              {suggestion}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    )}
-                  </div>
-                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={(e) => handleDelete(todo.id, e)}
+                  className="flex-shrink-0 w-8 h-8 p-0"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </div>
-            )}
-        </CardContent>
-      </Card>
-    </motion.div>
+            </div>
+
+            <AnimatePresence>
+              {expandedSuggestions === todo.id &&
+                todo.suggestion &&
+                todo.suggestion.length > 0 && (
+                  <motion.div
+                    key="suggestions"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="border-t bg-muted/20 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">
+                          AI Suggestions
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {todo.suggestion.map(
+                          (suggestion: string, index: number) => (
+                            <Card key={index} className="bg-background/50">
+                              <CardContent className="p-3">
+                                <div className="text-sm">
+                                  <span className="mr-2">•</span>
+                                  {suggestion}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+            </AnimatePresence>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   )
 }
 
@@ -226,6 +250,7 @@ export default function Page() {
     null
   )
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -240,7 +265,6 @@ export default function Page() {
 
   const handleAdd = async () => {
     if (!text.trim()) return
-
     try {
       await addTodo({ variables: { text } })
       setText("")
@@ -294,16 +318,12 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: todo.text }),
       })
-
       if (!response.ok) throw new Error("Failed to fetch suggestions")
-
       const dataRes = await response.json()
       const { suggestions } = dataRes
-
       await addSuggestion({
         variables: { id: todoId, suggestion: suggestions },
       })
-
       refetch()
       setExpandedSuggestions(todoId)
       toast.success("AI suggestions generated!")
@@ -319,9 +339,15 @@ export default function Page() {
     setActiveId(event.active.id)
   }
 
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event
+    setOverId(over ? over.id.toString() : null)
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
+    setOverId(null)
 
     if (!over || active.id === over.id) {
       return
@@ -434,6 +460,7 @@ export default function Page() {
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -451,6 +478,8 @@ export default function Page() {
                     handleDelete={handleDelete}
                     loadingSuggestions={loadingSuggestions}
                     expandedSuggestions={expandedSuggestions}
+                    isOver={overId === todo.id.toString()}
+                    isDragging={activeId === todo.id.toString()}
                   />
                 ))}
               </div>
