@@ -12,15 +12,16 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="ml-10 flex items-center">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
+          <Link href="/" className="mr-6 flex items-center space-x-1">
             <Image
               src={"/logo.png"}
               alt="logo"
               width={42}
               height={42}
               unoptimized
+              className="transition-filter dark:invert dark:white-200"
             />
-            <span className="hidden font-bold sm:inline-block">Smart Todo</span>
+            {/* <span className="hidden font-bold sm:inline-block">Smart Todo</span> */}
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
