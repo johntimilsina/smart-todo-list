@@ -213,10 +213,8 @@ function SortableTodoItem({
                           (suggestion: string, index: number) => (
                             <Card key={index} className="bg-background/50">
                               <CardContent className="p-3">
-                                <div className="text-sm text-muted-foreground">
-                                  <span className="font-medium text-foreground mr-2">
-                                    •
-                                  </span>
+                                <div className="text-sm">
+                                  <span className="font-medium mr-2">•</span>
                                   {suggestion}
                                 </div>
                               </CardContent>
