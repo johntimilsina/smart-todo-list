@@ -25,28 +25,11 @@ import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  DragOverlay,
-  type DragOverEvent,
-} from "@dnd-kit/core"
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import SortableList, { SortableItem } from "react-easy-sort"
 import { Header } from "@/components/header"
 
-function SortableTodoItem({
+function TodoItem({
   todo,
   index,
   handleToggle,
@@ -54,8 +37,7 @@ function SortableTodoItem({
   handleDelete,
   loadingSuggestions,
   expandedSuggestions,
-  isOver,
-  isDragging,
+  isReordering,
 }: {
   todo: any
   index: number
@@ -64,54 +46,26 @@ function SortableTodoItem({
   handleDelete: (id: number, e: React.MouseEvent) => void
   loadingSuggestions: number | null
   expandedSuggestions: number | null
-  isOver: boolean
-  isDragging: boolean
+  isReordering: boolean
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({
-      id: todo.id.toString(),
-    })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || "transform 250ms ease-in-out",
-  }
-
   return (
-    <div className="relative">
-      {isOver && !isDragging && (
-        <motion.div
-          layoutId="drop-indicator"
-          className="absolute inset-x-0 top-0 h-1 bg-primary rounded-full"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        />
-      )}
+    <SortableItem>
       <motion.div
-        ref={setNodeRef}
-        style={style}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
-        className={isDragging ? "z-50" : "z-0"}
+        layout
+        layoutId={`todo-${todo.id}`}
       >
         <Card
-          className={`transition-all duration-200 ${
-            isDragging
-              ? "shadow-2xl scale-105 border-primary/50"
-              : "hover:shadow-md"
-          } `}
+          className={`transition-all duration-200 hover:shadow-md ${
+            isReordering ? "pointer-events-none" : ""
+          }`}
         >
           <CardContent className="p-0">
             <div className="p-4 transition-colors duration-150">
               <div className="flex items-center gap-3">
-                <div
-                  {...attributes}
-                  {...listeners}
-                  className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded-md transition-colors touch-none"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded-md transition-colors touch-none">
                   <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
                 </div>
 
@@ -122,7 +76,7 @@ function SortableTodoItem({
                       : "border-muted-foreground hover:border-primary"
                   }`}
                   onClick={() => {
-                    if (expandedSuggestions !== todo.id) {
+                    if (expandedSuggestions !== todo.id && !isReordering) {
                       handleToggle(todo.id)
                     }
                   }}
@@ -143,8 +97,10 @@ function SortableTodoItem({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={(e) => handleSuggestSubtasks(todo.id, e)}
-                  disabled={loadingSuggestions === todo.id}
+                  onClick={(e) =>
+                    !isReordering && handleSuggestSubtasks(todo.id, e)
+                  }
+                  disabled={loadingSuggestions === todo.id || isReordering}
                   className="min-w-[110px] justify-between h-8"
                 >
                   <div className="flex items-center gap-2">
@@ -153,11 +109,7 @@ function SortableTodoItem({
                     ) : (
                       <Sparkles className="h-3 w-3" />
                     )}
-                    <span className="text-xs">
-                      {todo.suggestion && todo.suggestion.length > 0
-                        ? "View"
-                        : "Suggest"}
-                    </span>
+                    <span className="text-xs">Suggest</span>
                   </div>
                   {todo.suggestion && todo.suggestion.length > 0 && (
                     <div className="flex-shrink-0 ml-1">
@@ -173,7 +125,8 @@ function SortableTodoItem({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => handleDelete(todo.id, e)}
+                  onClick={(e) => !isReordering && handleDelete(todo.id, e)}
+                  disabled={isReordering}
                   className="flex-shrink-0 w-8 h-8 p-0"
                 >
                   <Trash2 className="h-3 w-3" />
@@ -192,6 +145,7 @@ function SortableTodoItem({
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
+                    layout
                   >
                     <div className="border-t bg-muted/20 p-4">
                       <div className="flex items-center gap-2 mb-3">
@@ -200,20 +154,20 @@ function SortableTodoItem({
                           AI Suggestions
                         </span>
                       </div>
-                      <div className="space-y-2">
+                      <ol className="space-y-2 list-none">
                         {todo.suggestion.map(
                           (suggestion: string, index: number) => (
-                            <Card key={index} className="bg-background/50">
-                              <CardContent className="p-3">
-                                <div className="text-sm">
-                                  <span className="font-medium mr-2">•</span>
-                                  {suggestion}
-                                </div>
-                              </CardContent>
-                            </Card>
+                            <li key={index} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
+                                {index + 1}
+                              </span>
+                              <span className="text-sm text-foreground/80 leading-relaxed">
+                                {suggestion}
+                              </span>
+                            </li>
                           )
                         )}
-                      </div>
+                      </ol>
                     </div>
                   </motion.div>
                 )}
@@ -221,7 +175,7 @@ function SortableTodoItem({
           </CardContent>
         </Card>
       </motion.div>
-    </div>
+    </SortableItem>
   )
 }
 
@@ -240,22 +194,12 @@ export default function Page() {
   const [expandedSuggestions, setExpandedSuggestions] = useState<number | null>(
     null
   )
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [overId, setOverId] = useState<string | null>(null)
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
+  const [isReordering, setIsReordering] = useState(false)
+  const [optimisticTodos, setOptimisticTodos] = useState<any[]>([])
 
   const handleAdd = async () => {
     if (!text.trim()) return
+
     try {
       await addTodo({ variables: { text } })
       setText("")
@@ -309,12 +253,16 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: todo.text }),
       })
+
       if (!response.ok) throw new Error("Failed to fetch suggestions")
+
       const dataRes = await response.json()
       const { suggestions } = dataRes
+
       await addSuggestion({
         variables: { id: todoId, suggestion: suggestions },
       })
+
       refetch()
       setExpandedSuggestions(todoId)
       toast.success("AI suggestions generated!")
@@ -326,39 +274,35 @@ export default function Page() {
     }
   }
 
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id)
-  }
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event
-    setOverId(over ? over.id.toString() : null)
-  }
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event
-    setActiveId(null)
-    setOverId(null)
-
-    if (!over || active.id === over.id) {
-      return
-    }
+  const onSortEnd = async (oldIndex: number, newIndex: number) => {
+    if (oldIndex === newIndex) return
 
     const todos = data?.todos || []
-    const oldIndex = todos.findIndex((todo) => todo.id.toString() === active.id)
-    const newIndex = todos.findIndex((todo) => todo.id.toString() === over.id)
-
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newTodos = arrayMove(todos, oldIndex, newIndex)
-      try {
-        const todoIds = newTodos.map((todo) => todo.id)
-        await reorderTodos({ variables: { todoIds } })
-        toast.success("Tasks reordered successfully")
-        refetch()
-      } catch (error) {
-        toast.error("Failed to reorder tasks")
-        refetch()
+    const sortedTodos = [...todos].sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order
       }
+      return a.id - b.id
+    })
+
+    const reorderedTodos = [...sortedTodos]
+    const [removed] = reorderedTodos.splice(oldIndex, 1)
+    reorderedTodos.splice(newIndex, 0, removed)
+
+    setOptimisticTodos(reorderedTodos)
+    setIsReordering(true)
+
+    try {
+      const todoIds = reorderedTodos.map((todo) => todo.id)
+      await reorderTodos({ variables: { todoIds } })
+      toast.success("Tasks reordered successfully")
+    } catch (error) {
+      toast.error("Failed to reorder tasks")
+      setOptimisticTodos([])
+      refetch()
+    } finally {
+      setIsReordering(false)
+      setTimeout(() => setOptimisticTodos([]), 100)
     }
   }
 
@@ -391,21 +335,22 @@ export default function Page() {
     )
   }
 
-  const todos = data?.todos
-    ? [...data.todos].sort((a, b) => {
-        if (a.order !== undefined && b.order !== undefined) {
-          return a.order - b.order
-        }
-        return a.id - b.id
-      })
-    : []
-
-  const activeTodo = todos.find((todo) => todo.id.toString() === activeId)
+  const todosToDisplay =
+    isReordering && optimisticTodos.length > 0
+      ? optimisticTodos
+      : data?.todos
+      ? [...data.todos].sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order
+          }
+          return a.id - b.id
+        })
+      : []
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <ScrollArea className="flex h-screen flex-col bg-background">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 px-6">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -432,7 +377,7 @@ export default function Page() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleAdd()}
-                  className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
+                  className="flex-1 h-12 text-lg border-2 focus-visible:border-primary shadow"
                 />
                 <Button
                   onClick={handleAdd}
@@ -446,21 +391,34 @@ export default function Page() {
             </div>
           </motion.div>
 
-          {todos.length > 0 && (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={todos.map((todo) => todo.id.toString())}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  {todos.map((todo: any, index: number) => (
-                    <SortableTodoItem
+          <div className="relative">
+            <AnimatePresence>
+              {isReordering && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-background/50 backdrop-blur-sm z-40 flex items-center justify-center rounded-lg"
+                >
+                  <div className="bg-background border rounded-lg p-4 shadow-lg flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span className="text-sm font-medium">
+                      Reordering tasks...
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {todosToDisplay.length > 0 && (
+              <motion.div layout>
+                <SortableList
+                  onSortEnd={onSortEnd}
+                  className="space-y-4"
+                  draggedItemClassName="opacity-50 scale-105"
+                >
+                  {todosToDisplay.map((todo: any, index: number) => (
+                    <TodoItem
                       key={todo.id}
                       todo={todo}
                       index={index}
@@ -469,70 +427,37 @@ export default function Page() {
                       handleDelete={handleDelete}
                       loadingSuggestions={loadingSuggestions}
                       expandedSuggestions={expandedSuggestions}
-                      isOver={overId === todo.id.toString()}
-                      isDragging={activeId === todo.id.toString()}
+                      isReordering={isReordering}
                     />
                   ))}
-                </div>
-              </SortableContext>
-
-              <DragOverlay>
-                {activeId && activeTodo ? (
-                  <Card className="shadow-2xl border-primary/50 opacity-95 rotate-2">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <GripVertical className="h-5 w-5 text-muted-foreground" />
-                        <div
-                          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            activeTodo.completed
-                              ? "bg-primary border-primary"
-                              : "border-muted-foreground"
-                          }`}
-                        >
-                          {activeTodo.completed && (
-                            <Check className="h-3 w-3 text-primary-foreground" />
-                          )}
-                        </div>
-                        <span
-                          className={`flex-1 text-base ${
-                            activeTodo.completed
-                              ? "line-through text-muted-foreground"
-                              : ""
-                          }`}
-                        >
-                          {activeTodo.text}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : null}
-              </DragOverlay>
-            </DndContext>
-          )}
-
-          {todos.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center py-16"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"
-              >
-                <Sparkles className="h-8 w-8" />
+                </SortableList>
               </motion.div>
-              <h3 className="text-xl font-medium mb-2">No tasks yet</h3>
-              <p className="text-muted-foreground">
-                Add your first task to get started with AI-powered suggestions
-              </p>
-            </motion.div>
-          )}
+            )}
+
+            {todosToDisplay.length === 0 && !isReordering && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-center py-16"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"
+                >
+                  <Sparkles className="h-8 w-8" />
+                </motion.div>
+                <h3 className="text-xl font-medium mb-2">No tasks yet</h3>
+                <p className="text-muted-foreground">
+                  Add your first task to get started with AI-powered suggestions
+                </p>
+              </motion.div>
+            )}
+          </div>
         </div>
       </main>
-    </div>
+    </ScrollArea>
   )
 }

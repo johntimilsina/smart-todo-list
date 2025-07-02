@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button"
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center">
-        <div className="ml-10 flex items-center">
-          <Link href="/" className="mr-6 flex items-center space-x-1">
+      <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between px-6">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center space-x-1">
             <Image
               src={"/logo.png"}
               alt="logo"
@@ -24,7 +24,8 @@ export function Header() {
             {/* <span className="hidden font-bold sm:inline-block">Smart Todo</span> */}
           </Link>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-2">
+
+        <div className="flex items-center space-x-2">
           <Button variant="ghost" size="icon" asChild>
             <Link
               href="https://github.com/johntimilsina/smart-todo-list"
