@@ -101,12 +101,7 @@ function SortableTodoItem({
             isDragging
               ? "shadow-2xl scale-105 border-primary/50"
               : "hover:shadow-md"
-          } ${expandedSuggestions === todo.id ? "" : "cursor-pointer"}`}
-          onClick={() => {
-            if (expandedSuggestions !== todo.id) {
-              handleToggle(todo.id)
-            }
-          }}
+          } `}
         >
           <CardContent className="p-0">
             <div className="p-4 transition-colors duration-150">
@@ -121,23 +116,20 @@ function SortableTodoItem({
                 </div>
 
                 <div
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleToggle(todo.id)
+                  className={`cursor-pointer flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    todo.completed
+                      ? "bg-primary border-primary"
+                      : "border-muted-foreground hover:border-primary"
+                  }`}
+                  onClick={() => {
+                    if (expandedSuggestions !== todo.id) {
+                      handleToggle(todo.id)
+                    }
                   }}
-                  className="cursor-pointer"
                 >
-                  <div
-                    className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      todo.completed
-                        ? "bg-primary border-primary"
-                        : "border-muted-foreground hover:border-primary"
-                    }`}
-                  >
-                    {todo.completed && (
-                      <Check className="h-3 w-3 text-primary-foreground" />
-                    )}
-                  </div>
+                  {todo.completed && (
+                    <Check className="h-3 w-3 text-primary-foreground" />
+                  )}
                 </div>
 
                 <span
@@ -433,27 +425,27 @@ export default function Page() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="mb-10"
           >
-            <Card className="border-2 shadow-lg">
-              <CardContent className="p-8">
-                <div className="flex gap-4">
-                  <Input
-                    placeholder="What needs to be done?"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleAdd()}
-                    className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
-                  />
-                  <Button
-                    onClick={handleAdd}
-                    size="lg"
-                    className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    <Plus className="h-6 w-6 mr-2" />
-                    Add Task
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div>
+              {/* <CardContent className="p-8"> */}
+              <div className="flex gap-4">
+                <Input
+                  placeholder="What needs to be done?"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleAdd()}
+                  className="flex-1 h-12 text-lg border-2 focus-visible:border-primary"
+                />
+                <Button
+                  onClick={handleAdd}
+                  size="lg"
+                  className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Plus className="h-6 w-6" />
+                  Add
+                </Button>
+              </div>
+              {/* </CardContent> */}
+            </div>
           </motion.div>
 
           {todos.length > 0 && (
