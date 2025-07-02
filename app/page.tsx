@@ -171,7 +171,7 @@ function SortableTodoItem({
                 </Button>
 
                 <Button
-                  variant="destructive"
+                  variant="ghost"
                   size="sm"
                   onClick={(e) => handleDelete(todo.id, e)}
                   className="flex-shrink-0 w-8 h-8 p-0"
@@ -426,7 +426,6 @@ export default function Page() {
             className="mb-10"
           >
             <div>
-              {/* <CardContent className="p-8"> */}
               <div className="flex gap-4">
                 <Input
                   placeholder="What needs to be done?"
@@ -444,7 +443,6 @@ export default function Page() {
                   Add
                 </Button>
               </div>
-              {/* </CardContent> */}
             </div>
           </motion.div>
 
