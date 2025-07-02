@@ -21,7 +21,6 @@ import {
   useAddSuggestionMutation,
   useReorderTodosMutation,
 } from "@/lib/graphql/generated/graphql"
-import { todo } from "node:test"
 
 export default function Page() {
   const { data, loading, error, refetch } = useGetTodosQuery()
@@ -40,6 +39,10 @@ export default function Page() {
   )
   const [isReordering, setIsReordering] = useState(false)
   const [optimisticTodos, setOptimisticTodos] = useState<any[]>([])
+  const [prioritizing, setPrioritizing] = useState(false)
+  const [prioritizedResult, setPrioritizedResult] = useState<string | null>(
+    null
+  )
 
   const handleAdd = async () => {
     if (!text.trim()) return
@@ -150,6 +153,72 @@ export default function Page() {
     }
   }
 
+  const handlePrioritize = async () => {
+    if (!data?.todos || data.todos.length < 3) return
+    setPrioritizing(true)
+    setPrioritizedResult(null)
+    try {
+      const todosText = data.todos.map((t: any) => t.text)
+      const response = await fetch("/api/prioritize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ todos: todosText }),
+      })
+      if (!response.ok) throw new Error("Failed to prioritize tasks")
+      const result = await response.json()
+      setPrioritizedResult(result.prioritized)
+      if (
+        result.ordered &&
+        Array.isArray(result.ordered) &&
+        result.ordered.length > 0
+      ) {
+        const todosCopy = [...data.todos]
+        const orderedTodos = result.ordered
+          .map((orderedText: string) => {
+            let bestMatch = null
+            let bestScore = 0
+            for (const todo of todosCopy) {
+              const orderedWords = orderedText.toLowerCase().split(/\s+/)
+              const todoWords = todo.text.toLowerCase().split(/\s+/)
+              const matchCount = orderedWords.filter((w) =>
+                todoWords.includes(w)
+              ).length
+              if (matchCount > bestScore) {
+                bestScore = matchCount
+                bestMatch = todo
+              }
+            }
+            if (bestMatch) {
+              todosCopy.splice(todosCopy.indexOf(bestMatch), 1)
+              return bestMatch
+            }
+            return null
+          })
+          .filter(Boolean)
+        const finalOrder = [...orderedTodos, ...todosCopy]
+        setOptimisticTodos(finalOrder)
+        setIsReordering(true)
+        try {
+          const todoIds = finalOrder.map((todo) => todo.id)
+          await reorderTodos({ variables: { todoIds } })
+          toast.success("Tasks reordered successfully")
+        } catch (error) {
+          toast.error("Failed to reorder tasks")
+          setOptimisticTodos([])
+          refetch()
+        } finally {
+          setIsReordering(false)
+          setTimeout(() => setOptimisticTodos([]), 100)
+        }
+      }
+      toast.success("Tasks prioritized!")
+    } catch (error) {
+      toast.error("Failed to prioritize tasks")
+    } finally {
+      setPrioritizing(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -205,17 +274,33 @@ export default function Page() {
             <Button
               size="lg"
               variant="outline"
-              disabled={loading || !data?.todos.length}
+              disabled={
+                loading || (data?.todos?.length ?? 0) < 3 || prioritizing
+              }
+              onClick={handlePrioritize}
+              className="mt-3"
             >
-              Prioritize My Day
+              {prioritizing ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" /> Prioritizing...
+                </span>
+              ) : (
+                "Prioritize My Day"
+              )}
             </Button>
-            <Button size="lg" variant="outline" disabled={loading}>
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={loading}
+              className="mt-3"
+            >
               Create from image
             </Button>
             <Button
               size="lg"
               variant="outline"
               disabled={loading || !data?.todos.length}
+              className="mt-3"
             >
               Pep Talk
             </Button>
@@ -247,6 +332,20 @@ export default function Page() {
               </div>
             </div>
           </motion.div>
+
+          {prioritizedResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="bg-muted border rounded-lg p-4 mb-8 shadow"
+            >
+              <h4 className="font-semibold mb-2">Prioritized List</h4>
+              <pre className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {prioritizedResult}
+              </pre>
+            </motion.div>
+          )}
 
           <div className="relative">
             <AnimatePresence>
