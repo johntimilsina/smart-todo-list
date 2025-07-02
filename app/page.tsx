@@ -21,6 +21,7 @@ import {
   useAddSuggestionMutation,
   useReorderTodosMutation,
 } from "@/lib/graphql/generated/graphql"
+import { todo } from "node:test"
 
 export default function Page() {
   const { data, loading, error, refetch } = useGetTodosQuery()
@@ -199,12 +200,25 @@ export default function Page() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-12 space-x-2"
           >
-            <h1 className="text-4xl font-bold mb-2">Smart Todo</h1>
-            <p className="text-muted-foreground text-lg">
-              AI-powered task management
-            </p>
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={loading || !data?.todos.length}
+            >
+              Prioritize My Day
+            </Button>
+            <Button size="lg" variant="outline" disabled={loading}>
+              Create from image
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={loading || !data?.todos.length}
+            >
+              Pep Talk
+            </Button>
           </motion.div>
 
           <motion.div

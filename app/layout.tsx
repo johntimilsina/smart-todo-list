@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Smart Todo App",
+  title: "Smart Todo",
   description: "AI-powered task management",
 }
 

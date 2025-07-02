@@ -21,7 +21,7 @@ export function Header() {
               unoptimized
               className="transition-filter dark:invert dark:white-200"
             />
-            {/* <span className="hidden font-bold sm:inline-block">Smart Todo</span> */}
+            <span className="hidden font-bold sm:inline-block">Smart Todo</span>
           </Link>
         </div>
 
