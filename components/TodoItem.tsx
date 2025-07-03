@@ -50,7 +50,7 @@ export function TodoItem({
             <div className="p-4 transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <div className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded-md transition-colors touch-none">
-                  <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+                  <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors text-primary" />
                 </div>
 
                 <div
@@ -91,7 +91,7 @@ export function TodoItem({
                     {loadingSuggestions === todo.id ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
-                      <Sparkles className="h-3 w-3" />
+                      <Sparkles className="h-3 w-3 text-primary" />
                     )}
                     <span className="text-xs">Suggest</span>
                   </div>
@@ -113,7 +113,7 @@ export function TodoItem({
                   disabled={isReordering}
                   className="flex-shrink-0 w-8 h-8 p-0"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3 w-3 text-destructive" />
                 </Button>
               </div>
             </div>

@@ -2,7 +2,14 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Plus, Sparkles, Loader2 } from "lucide-react"
+import {
+  Plus,
+  Sparkles,
+  Loader2,
+  ClockArrowUp,
+  ScanSearch,
+  BicepsFlexed,
+} from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import SortableList from "react-easy-sort"
@@ -273,36 +280,45 @@ export default function Page() {
           >
             <Button
               size="lg"
-              variant="outline"
+              variant="secondary"
               disabled={
                 loading || (data?.todos?.length ?? 0) < 3 || prioritizing
               }
               onClick={handlePrioritize}
-              className="mt-3"
+              className="my-3"
             >
               {prioritizing ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" /> Prioritizing...
                 </span>
               ) : (
-                "Prioritize My Day"
+                <span className="flex items-center gap-2">
+                  <ClockArrowUp className="h-5 w-5 text-primary" />
+                  Prioritize My Day
+                </span>
               )}
             </Button>
             <Button
               size="lg"
-              variant="outline"
+              variant="secondary"
               disabled={loading}
-              className="mt-3"
+              className="my-3"
             >
-              Create from image
+              <span className="flex items-center gap-2">
+                <ScanSearch className="h-5 w-5 text-primary" />
+                Create from image
+              </span>
             </Button>
             <Button
               size="lg"
-              variant="outline"
+              variant="secondary"
               disabled={loading || !data?.todos.length}
-              className="mt-3"
+              className="my-3"
             >
-              Pep Talk
+              <span className="flex items-center gap-2">
+                <BicepsFlexed className="h-5 w-5 text-primary" />
+                Pep Talk
+              </span>
             </Button>
           </motion.div>
 

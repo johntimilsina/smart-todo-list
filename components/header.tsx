@@ -16,8 +16,8 @@ export function Header() {
             <Image
               src={"/logo.png"}
               alt="logo"
-              width={42}
-              height={42}
+              width={23}
+              height={23}
               unoptimized
               className="transition-filter dark:invert dark:white-200"
             />
