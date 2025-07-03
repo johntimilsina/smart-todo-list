@@ -6,9 +6,10 @@ import {
   Plus,
   Sparkles,
   Loader2,
-  ClockArrowUp,
+  ArrowUpIcon as ClockArrowUp,
   ScanSearch,
-  BicepsFlexed,
+  DumbbellIcon as BicepsFlexed,
+  XCircle,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
@@ -19,6 +20,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Header } from "@/components/header"
 import { TodoItem } from "@/components/TodoItem"
+import { PepTalkDialog } from "@/components/pep-talk-dialog"
+import { CreateFromImageDialog } from "@/components/create-from-image-dialog"
 
 import {
   useGetTodosQuery,
@@ -50,6 +53,8 @@ export default function Page() {
   const [prioritizedResult, setPrioritizedResult] = useState<string | null>(
     null
   )
+  const [pepTalkOpen, setPepTalkOpen] = useState(false)
+  const [imageDialogOpen, setImageDialogOpen] = useState(false)
 
   const handleAdd = async () => {
     if (!text.trim()) return
@@ -162,8 +167,10 @@ export default function Page() {
 
   const handlePrioritize = async () => {
     if (!data?.todos || data.todos.length < 3) return
+
     setPrioritizing(true)
     setPrioritizedResult(null)
+
     try {
       const todosText = data.todos.map((t: any) => t.text)
       const response = await fetch("/api/prioritize", {
@@ -171,9 +178,12 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ todos: todosText }),
       })
+
       if (!response.ok) throw new Error("Failed to prioritize tasks")
+
       const result = await response.json()
       setPrioritizedResult(result.prioritized)
+
       if (
         result.ordered &&
         Array.isArray(result.ordered) &&
@@ -184,17 +194,20 @@ export default function Page() {
           .map((orderedText: string) => {
             let bestMatch = null
             let bestScore = 0
+
             for (const todo of todosCopy) {
               const orderedWords = orderedText.toLowerCase().split(/\s+/)
               const todoWords = todo.text.toLowerCase().split(/\s+/)
               const matchCount = orderedWords.filter((w) =>
                 todoWords.includes(w)
               ).length
+
               if (matchCount > bestScore) {
                 bestScore = matchCount
                 bestMatch = todo
               }
             }
+
             if (bestMatch) {
               todosCopy.splice(todosCopy.indexOf(bestMatch), 1)
               return bestMatch
@@ -202,9 +215,11 @@ export default function Page() {
             return null
           })
           .filter(Boolean)
+
         const finalOrder = [...orderedTodos, ...todosCopy]
         setOptimisticTodos(finalOrder)
         setIsReordering(true)
+
         try {
           const todoIds = finalOrder.map((todo) => todo.id)
           await reorderTodos({ variables: { todoIds } })
@@ -218,12 +233,18 @@ export default function Page() {
           setTimeout(() => setOptimisticTodos([]), 100)
         }
       }
+
       toast.success("Tasks prioritized!")
     } catch (error) {
       toast.error("Failed to prioritize tasks")
     } finally {
       setPrioritizing(false)
     }
+  }
+
+  const handleAddTodosFromImage = async (todos: string[]) => {
+    await Promise.all(todos.map((text) => addTodo({ variables: { text } })))
+    refetch()
   }
 
   if (loading) {
@@ -303,6 +324,7 @@ export default function Page() {
               variant="secondary"
               disabled={loading}
               className="my-3"
+              onClick={() => setImageDialogOpen(true)}
             >
               <span className="flex items-center gap-2">
                 <ScanSearch className="h-5 w-5 text-primary" />
@@ -314,6 +336,7 @@ export default function Page() {
               variant="secondary"
               disabled={loading || !data?.todos.length}
               className="my-3"
+              onClick={() => setPepTalkOpen(true)}
             >
               <span className="flex items-center gap-2">
                 <BicepsFlexed className="h-5 w-5 text-primary" />
@@ -356,7 +379,15 @@ export default function Page() {
               transition={{ duration: 0.4 }}
               className="bg-muted border rounded-lg p-4 mb-8 shadow"
             >
-              <h4 className="font-semibold mb-2">Prioritized List</h4>
+              <h4 className="font-semibold mb-2 flex items-center justify-between">
+                <span>Prioritized List</span>
+                <span
+                  className="cursor-pointer"
+                  onClick={() => setPrioritizedResult(null)}
+                >
+                  <XCircle className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                </span>
+              </h4>
               <pre className="whitespace-pre-wrap text-sm text-muted-foreground">
                 {prioritizedResult}
               </pre>
@@ -430,6 +461,18 @@ export default function Page() {
           </div>
         </div>
       </main>
+
+      <PepTalkDialog
+        open={pepTalkOpen}
+        onOpenChange={setPepTalkOpen}
+        todos={data?.todos || []}
+      />
+
+      <CreateFromImageDialog
+        open={imageDialogOpen}
+        onOpenChange={setImageDialogOpen}
+        onAddTodos={handleAddTodosFromImage}
+      />
     </ScrollArea>
   )
 }
