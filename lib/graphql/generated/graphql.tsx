@@ -17,6 +17,14 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type FeatureUsage = {
+  __typename?: 'FeatureUsage';
+  feature: Scalars['String']['output'];
+  id: Scalars['Int']['output'];
+  usedAt: Scalars['String']['output'];
+  userId: Scalars['String']['output'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addSuggestion: Todo;
@@ -59,6 +67,7 @@ export type MutationToggleTodoArgs = {
 
 export type Query = {
   __typename?: 'Query';
+  featureUsage: Array<FeatureUsage>;
   todos: Array<Todo>;
 };
 
@@ -113,6 +122,11 @@ export type ToggleTodoMutationVariables = Exact<{
 
 
 export type ToggleTodoMutation = { __typename?: 'Mutation', toggleTodo: { __typename?: 'Todo', id: number, completed: boolean } };
+
+export type GetFeatureUsageQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetFeatureUsageQuery = { __typename?: 'Query', featureUsage: Array<{ __typename?: 'FeatureUsage', id: number, userId: string, feature: string, usedAt: string }> };
 
 export type GetTodosQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -300,6 +314,48 @@ export function useToggleTodoMutation(baseOptions?: Apollo.MutationHookOptions<T
 export type ToggleTodoMutationHookResult = ReturnType<typeof useToggleTodoMutation>;
 export type ToggleTodoMutationResult = Apollo.MutationResult<ToggleTodoMutation>;
 export type ToggleTodoMutationOptions = Apollo.BaseMutationOptions<ToggleTodoMutation, ToggleTodoMutationVariables>;
+export const GetFeatureUsageDocument = gql`
+    query getFeatureUsage {
+  featureUsage {
+    id
+    userId
+    feature
+    usedAt
+  }
+}
+    `;
+
+/**
+ * __useGetFeatureUsageQuery__
+ *
+ * To run a query within a React component, call `useGetFeatureUsageQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetFeatureUsageQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetFeatureUsageQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetFeatureUsageQuery(baseOptions?: Apollo.QueryHookOptions<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>(GetFeatureUsageDocument, options);
+      }
+export function useGetFeatureUsageLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>(GetFeatureUsageDocument, options);
+        }
+export function useGetFeatureUsageSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>(GetFeatureUsageDocument, options);
+        }
+export type GetFeatureUsageQueryHookResult = ReturnType<typeof useGetFeatureUsageQuery>;
+export type GetFeatureUsageLazyQueryHookResult = ReturnType<typeof useGetFeatureUsageLazyQuery>;
+export type GetFeatureUsageSuspenseQueryHookResult = ReturnType<typeof useGetFeatureUsageSuspenseQuery>;
+export type GetFeatureUsageQueryResult = Apollo.QueryResult<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>;
 export const GetTodosDocument = gql`
     query getTodos {
   todos {

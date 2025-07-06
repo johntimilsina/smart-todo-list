@@ -37,12 +37,20 @@ import {
 
 export default function Page() {
   const { user, loading: userLoading } = useSupabaseUser()
+  const isAnonymous = user?.is_anonymous
   const { data, loading, error, refetch } = useGetTodosQuery()
   const [addTodo] = useAddTodoMutation()
   const [deleteTodo] = useDeleteTodoMutation()
   const [toggleTodo] = useToggleTodoMutation()
   const [addSuggestion] = useAddSuggestionMutation()
   const [reorderTodos] = useReorderTodosMutation()
+
+  const [anonFeatureUsage, setAnonFeatureUsage] = useState({
+    pepTalk: false,
+    createFromImage: false,
+    prioritize: false,
+  })
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   const [text, setText] = useState("")
   const [loadingSuggestions, setLoadingSuggestions] = useState<number | null>(
@@ -60,15 +68,26 @@ export default function Page() {
   const [pepTalkOpen, setPepTalkOpen] = useState(false)
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
 
+  console.log("user", user)
+
   const handleAdd = async () => {
     if (!text.trim() || !user) return
-
+    if (isAnonymous && (data?.todos?.length ?? 0) >= 3) {
+      setShowLoginPrompt(true)
+      toast.error(
+        "Anonymous users can only add 3 todos. Please log in to add more."
+      )
+      return
+    }
     try {
       await addTodo({ variables: { text, userId: user.id } })
       setText("")
       refetch()
       toast.success("Task added successfully")
-    } catch (error) {
+    } catch (error: any) {
+      if (isAnonymous && error?.message?.includes("add 3 todos")) {
+        setShowLoginPrompt(true)
+      }
       toast.error("Failed to add task")
     }
   }
@@ -103,7 +122,11 @@ export default function Page() {
     e.stopPropagation()
     const todo = data?.todos.find((t: { id: number }) => t.id === todoId)
     if (!todo) return
-
+    if (isAnonymous && anonFeatureUsage.pepTalk) {
+      setShowLoginPrompt(true)
+      toast.error("Anonymous users can only use Pep Talk once. Please log in.")
+      return
+    }
     if (todo.suggestion && todo.suggestion.length > 0) {
       setExpandedSuggestions(expandedSuggestions === todoId ? null : todoId)
       return
@@ -129,11 +152,14 @@ export default function Page() {
           userId: user?.id ?? "",
         },
       })
-
+      if (isAnonymous) setAnonFeatureUsage((u) => ({ ...u, pepTalk: true }))
       refetch()
       setExpandedSuggestions(todoId)
       toast.success("AI suggestions generated!")
-    } catch (error) {
+    } catch (error: any) {
+      if (isAnonymous && error?.message?.includes("feature once")) {
+        setShowLoginPrompt(true)
+      }
       console.error(error)
       toast.error("Failed to generate suggestions")
     } finally {
@@ -162,8 +188,12 @@ export default function Page() {
     try {
       const todoIds = reorderedTodos.map((todo) => todo.id)
       await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
+      if (isAnonymous) setAnonFeatureUsage((u) => ({ ...u, prioritize: true }))
       toast.success("Tasks reordered successfully")
-    } catch (error) {
+    } catch (error: any) {
+      if (isAnonymous && error?.message?.includes("feature once")) {
+        setShowLoginPrompt(true)
+      }
       toast.error("Failed to reorder tasks")
       setOptimisticTodos([])
       refetch()
@@ -175,7 +205,11 @@ export default function Page() {
 
   const handlePrioritize = async () => {
     if (!data?.todos || data.todos.length < 3) return
-
+    if (isAnonymous && anonFeatureUsage.prioritize) {
+      setShowLoginPrompt(true)
+      toast.error("Anonymous users can only prioritize once. Please log in.")
+      return
+    }
     setPrioritizing(true)
     setPrioritizedResult(null)
 
@@ -232,7 +266,10 @@ export default function Page() {
           const todoIds = finalOrder.map((todo) => todo.id)
           await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
           toast.success("Tasks reordered successfully")
-        } catch (error) {
+        } catch (error: any) {
+          if (isAnonymous && error?.message?.includes("feature once")) {
+            setShowLoginPrompt(true)
+          }
           toast.error("Failed to reorder tasks")
           setOptimisticTodos([])
           refetch()
@@ -251,11 +288,20 @@ export default function Page() {
   }
 
   const handleAddTodosFromImage = async (todos: string[]) => {
+    if (isAnonymous && anonFeatureUsage.createFromImage) {
+      setShowLoginPrompt(true)
+      toast.error(
+        "Anonymous users can only use Create from Image once. Please log in."
+      )
+      return
+    }
     await Promise.all(
       todos.map((text) =>
         addTodo({ variables: { text, userId: user?.id ?? "" } })
       )
     )
+    if (isAnonymous)
+      setAnonFeatureUsage((u) => ({ ...u, createFromImage: true }))
     refetch()
   }
 
@@ -406,6 +452,7 @@ export default function Page() {
                   onClick={handleAdd}
                   size="lg"
                   className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  disabled={isAnonymous && (data?.todos?.length ?? 0) >= 3}
                 >
                   <Plus className="h-6 w-6" />
                   Add
@@ -515,6 +562,34 @@ export default function Page() {
         onOpenChange={setImageDialogOpen}
         onAddTodos={handleAddTodosFromImage}
       />
+
+      {/* Show login prompt modal if needed */}
+      {/* You can replace this with your own modal implementation */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-background p-8 rounded-lg shadow-lg text-center">
+            <h2 className="text-xl font-bold mb-4">Login Required</h2>
+            <p className="mb-4">
+              You have reached the limit for anonymous users. Please log in or
+              sign up to continue using all features.
+            </p>
+            <Button
+              onClick={() => {
+                /* trigger your login flow here */
+              }}
+            >
+              Log In / Sign Up
+            </Button>
+            <Button
+              variant="secondary"
+              className="ml-4"
+              onClick={() => setShowLoginPrompt(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </ScrollArea>
   )
 }

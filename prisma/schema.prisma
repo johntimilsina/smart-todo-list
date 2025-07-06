@@ -23,3 +23,12 @@ model Todo {
   suggestion String[] @default([])
   userId    String
 }
+
+model FeatureUsage {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  feature   String   // e.g., "pep_talk", "create_from_image", "prioritize"
+  usedAt    DateTime @default(now())
+  @@unique([userId, feature])
+}
+

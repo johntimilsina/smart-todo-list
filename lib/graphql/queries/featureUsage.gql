@@ -1,0 +1,8 @@
+query getFeatureUsage {
+  featureUsage {
+    id
+    userId
+    feature
+    usedAt
+  }
+}

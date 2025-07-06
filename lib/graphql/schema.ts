@@ -11,8 +11,19 @@ export const typeDefs = gql`
     userId: String!
   }
 
+  type FeatureUsage {
+    id: Int!
+    userId: String!
+    feature: String!
+    usedAt: String!
+  }
+
   type Query {
     todos: [Todo!]!
+  }
+
+  type Query { 
+    featureUsage: [FeatureUsage!]!
   }
 
   type Mutation {
