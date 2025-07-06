@@ -1,5 +1,7 @@
 "use client"
 
+//TODO: implement captcha if anonymous users is enabled
+
 import type React from "react"
 import { useState } from "react"
 import {
@@ -22,6 +24,7 @@ import { Header } from "@/components/header"
 import { TodoItem } from "@/components/TodoItem"
 import { PepTalkDialog } from "@/components/pep-talk-dialog"
 import { CreateFromImageDialog } from "@/components/create-from-image-dialog"
+import { useSupabaseUser } from "@/components/AuthProvider"
 
 import {
   useGetTodosQuery,
@@ -33,6 +36,7 @@ import {
 } from "@/lib/graphql/generated/graphql"
 
 export default function Page() {
+  const { user, loading: userLoading } = useSupabaseUser()
   const { data, loading, error, refetch } = useGetTodosQuery()
   const [addTodo] = useAddTodoMutation()
   const [deleteTodo] = useDeleteTodoMutation()
@@ -57,10 +61,10 @@ export default function Page() {
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
 
   const handleAdd = async () => {
-    if (!text.trim()) return
+    if (!text.trim() || !user) return
 
     try {
-      await addTodo({ variables: { text } })
+      await addTodo({ variables: { text, userId: user.id } })
       setText("")
       refetch()
       toast.success("Task added successfully")
@@ -72,7 +76,7 @@ export default function Page() {
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await deleteTodo({ variables: { id } })
+      await deleteTodo({ variables: { id, userId: user?.id ?? "" } })
       refetch()
       toast.success("Task deleted")
     } catch (error) {
@@ -83,7 +87,7 @@ export default function Page() {
   const handleToggle = async (id: number) => {
     const todo = data?.todos.find((t: { id: number }) => t.id === id)
     try {
-      await toggleTodo({ variables: { id } })
+      await toggleTodo({ variables: { id, userId: user?.id ?? "" } })
       refetch()
       if (todo?.completed) {
         toast.success("Task marked as incomplete")
@@ -119,7 +123,11 @@ export default function Page() {
       const { suggestions } = dataRes
 
       await addSuggestion({
-        variables: { id: todoId, suggestion: suggestions },
+        variables: {
+          id: todoId,
+          suggestion: suggestions,
+          userId: user?.id ?? "",
+        },
       })
 
       refetch()
@@ -153,7 +161,7 @@ export default function Page() {
 
     try {
       const todoIds = reorderedTodos.map((todo) => todo.id)
-      await reorderTodos({ variables: { todoIds } })
+      await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
       toast.success("Tasks reordered successfully")
     } catch (error) {
       toast.error("Failed to reorder tasks")
@@ -222,7 +230,7 @@ export default function Page() {
 
         try {
           const todoIds = finalOrder.map((todo) => todo.id)
-          await reorderTodos({ variables: { todoIds } })
+          await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
           toast.success("Tasks reordered successfully")
         } catch (error) {
           toast.error("Failed to reorder tasks")
@@ -243,8 +251,42 @@ export default function Page() {
   }
 
   const handleAddTodosFromImage = async (todos: string[]) => {
-    await Promise.all(todos.map((text) => addTodo({ variables: { text } })))
+    await Promise.all(
+      todos.map((text) =>
+        addTodo({ variables: { text, userId: user?.id ?? "" } })
+      )
+    )
     refetch()
+  }
+
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center space-x-3"
+        >
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="text-lg font-medium">Loading user...</span>
+        </motion.div>
+      </div>
+    )
+  }
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center space-x-3"
+        >
+          <span className="text-lg font-medium">
+            Please sign in or wait for anonymous session...
+          </span>
+        </motion.div>
+      </div>
+    )
   }
 
   if (loading) {

@@ -29,27 +29,32 @@ export type Mutation = {
 
 export type MutationAddSuggestionArgs = {
   id: Scalars['Int']['input'];
-  suggestion: Array<InputMaybe<Scalars['String']['input']>>;
+  suggestion: Array<Scalars['String']['input']>;
+  userId: Scalars['String']['input'];
 };
 
 
 export type MutationAddTodoArgs = {
   text: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
 export type MutationDeleteTodoArgs = {
   id: Scalars['Int']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
 export type MutationReorderTodosArgs = {
   todoIds: Array<Scalars['Int']['input']>;
+  userId: Scalars['String']['input'];
 };
 
 
 export type MutationToggleTodoArgs = {
   id: Scalars['Int']['input'];
+  userId: Scalars['String']['input'];
 };
 
 export type Query = {
@@ -65,11 +70,13 @@ export type Todo = {
   order: Scalars['Int']['output'];
   suggestion?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   text: Scalars['String']['output'];
+  userId: Scalars['String']['output'];
 };
 
 export type AddSuggestionMutationVariables = Exact<{
   id: Scalars['Int']['input'];
-  suggestion: Array<InputMaybe<Scalars['String']['input']>> | InputMaybe<Scalars['String']['input']>;
+  suggestion: Array<Scalars['String']['input']> | Scalars['String']['input'];
+  userId: Scalars['String']['input'];
 }>;
 
 
@@ -77,13 +84,15 @@ export type AddSuggestionMutation = { __typename?: 'Mutation', addSuggestion: { 
 
 export type AddTodoMutationVariables = Exact<{
   text: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
 }>;
 
 
-export type AddTodoMutation = { __typename?: 'Mutation', addTodo: { __typename?: 'Todo', id: number, text: string } };
+export type AddTodoMutation = { __typename?: 'Mutation', addTodo: { __typename?: 'Todo', id: number, text: string, completed: boolean, order: number, suggestion?: Array<string | null> | null } };
 
 export type DeleteTodoMutationVariables = Exact<{
   id: Scalars['Int']['input'];
+  userId: Scalars['String']['input'];
 }>;
 
 
@@ -91,6 +100,7 @@ export type DeleteTodoMutation = { __typename?: 'Mutation', deleteTodo: boolean 
 
 export type ReorderTodosMutationVariables = Exact<{
   todoIds: Array<Scalars['Int']['input']> | Scalars['Int']['input'];
+  userId: Scalars['String']['input'];
 }>;
 
 
@@ -98,6 +108,7 @@ export type ReorderTodosMutation = { __typename?: 'Mutation', reorderTodos: Arra
 
 export type ToggleTodoMutationVariables = Exact<{
   id: Scalars['Int']['input'];
+  userId: Scalars['String']['input'];
 }>;
 
 
@@ -106,12 +117,12 @@ export type ToggleTodoMutation = { __typename?: 'Mutation', toggleTodo: { __type
 export type GetTodosQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetTodosQuery = { __typename?: 'Query', todos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, suggestion?: Array<string | null> | null, order: number }> };
+export type GetTodosQuery = { __typename?: 'Query', todos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, suggestion?: Array<string | null> | null, order: number, userId: string }> };
 
 
 export const AddSuggestionDocument = gql`
-    mutation addSuggestion($id: Int!, $suggestion: [String]!) {
-  addSuggestion(id: $id, suggestion: $suggestion) {
+    mutation addSuggestion($id: Int!, $suggestion: [String!]!, $userId: String!) {
+  addSuggestion(id: $id, suggestion: $suggestion, userId: $userId) {
     id
     suggestion
   }
@@ -134,6 +145,7 @@ export type AddSuggestionMutationFn = Apollo.MutationFunction<AddSuggestionMutat
  *   variables: {
  *      id: // value for 'id'
  *      suggestion: // value for 'suggestion'
+ *      userId: // value for 'userId'
  *   },
  * });
  */
@@ -145,10 +157,13 @@ export type AddSuggestionMutationHookResult = ReturnType<typeof useAddSuggestion
 export type AddSuggestionMutationResult = Apollo.MutationResult<AddSuggestionMutation>;
 export type AddSuggestionMutationOptions = Apollo.BaseMutationOptions<AddSuggestionMutation, AddSuggestionMutationVariables>;
 export const AddTodoDocument = gql`
-    mutation addTodo($text: String!) {
-  addTodo(text: $text) {
+    mutation addTodo($text: String!, $userId: String!) {
+  addTodo(text: $text, userId: $userId) {
     id
     text
+    completed
+    order
+    suggestion
   }
 }
     `;
@@ -168,6 +183,7 @@ export type AddTodoMutationFn = Apollo.MutationFunction<AddTodoMutation, AddTodo
  * const [addTodoMutation, { data, loading, error }] = useAddTodoMutation({
  *   variables: {
  *      text: // value for 'text'
+ *      userId: // value for 'userId'
  *   },
  * });
  */
@@ -179,8 +195,8 @@ export type AddTodoMutationHookResult = ReturnType<typeof useAddTodoMutation>;
 export type AddTodoMutationResult = Apollo.MutationResult<AddTodoMutation>;
 export type AddTodoMutationOptions = Apollo.BaseMutationOptions<AddTodoMutation, AddTodoMutationVariables>;
 export const DeleteTodoDocument = gql`
-    mutation deleteTodo($id: Int!) {
-  deleteTodo(id: $id)
+    mutation deleteTodo($id: Int!, $userId: String!) {
+  deleteTodo(id: $id, userId: $userId)
 }
     `;
 export type DeleteTodoMutationFn = Apollo.MutationFunction<DeleteTodoMutation, DeleteTodoMutationVariables>;
@@ -199,6 +215,7 @@ export type DeleteTodoMutationFn = Apollo.MutationFunction<DeleteTodoMutation, D
  * const [deleteTodoMutation, { data, loading, error }] = useDeleteTodoMutation({
  *   variables: {
  *      id: // value for 'id'
+ *      userId: // value for 'userId'
  *   },
  * });
  */
@@ -210,8 +227,8 @@ export type DeleteTodoMutationHookResult = ReturnType<typeof useDeleteTodoMutati
 export type DeleteTodoMutationResult = Apollo.MutationResult<DeleteTodoMutation>;
 export type DeleteTodoMutationOptions = Apollo.BaseMutationOptions<DeleteTodoMutation, DeleteTodoMutationVariables>;
 export const ReorderTodosDocument = gql`
-    mutation ReorderTodos($todoIds: [Int!]!) {
-  reorderTodos(todoIds: $todoIds) {
+    mutation ReorderTodos($todoIds: [Int!]!, $userId: String!) {
+  reorderTodos(todoIds: $todoIds, userId: $userId) {
     id
     text
     completed
@@ -237,6 +254,7 @@ export type ReorderTodosMutationFn = Apollo.MutationFunction<ReorderTodosMutatio
  * const [reorderTodosMutation, { data, loading, error }] = useReorderTodosMutation({
  *   variables: {
  *      todoIds: // value for 'todoIds'
+ *      userId: // value for 'userId'
  *   },
  * });
  */
@@ -248,8 +266,8 @@ export type ReorderTodosMutationHookResult = ReturnType<typeof useReorderTodosMu
 export type ReorderTodosMutationResult = Apollo.MutationResult<ReorderTodosMutation>;
 export type ReorderTodosMutationOptions = Apollo.BaseMutationOptions<ReorderTodosMutation, ReorderTodosMutationVariables>;
 export const ToggleTodoDocument = gql`
-    mutation toggleTodo($id: Int!) {
-  toggleTodo(id: $id) {
+    mutation toggleTodo($id: Int!, $userId: String!) {
+  toggleTodo(id: $id, userId: $userId) {
     id
     completed
   }
@@ -271,6 +289,7 @@ export type ToggleTodoMutationFn = Apollo.MutationFunction<ToggleTodoMutation, T
  * const [toggleTodoMutation, { data, loading, error }] = useToggleTodoMutation({
  *   variables: {
  *      id: // value for 'id'
+ *      userId: // value for 'userId'
  *   },
  * });
  */
@@ -289,6 +308,7 @@ export const GetTodosDocument = gql`
     completed
     suggestion
     order
+    userId
   }
 }
     `;

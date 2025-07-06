@@ -1,5 +1,5 @@
-mutation addSuggestion($id: Int!, $suggestion: [String]!) {
-  addSuggestion(id: $id, suggestion: $suggestion) {
+mutation addSuggestion($id: Int!, $suggestion: [String!]!, $userId: String!) {
+  addSuggestion(id: $id, suggestion: $suggestion, userId: $userId) {
     id
     suggestion
   }

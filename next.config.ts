@@ -10,12 +10,10 @@ const nextConfig: NextConfig = {
 
     return config
   },
-  experimental: {
-    turbo: {
-      rules: {
-        "*.gql": {
-          loaders: ["graphql-tag/loader"],
-        },
+  turbopack: {
+    rules: {
+      "*.gql": {
+        loaders: ["graphql-tag/loader"],
       },
     },
   },

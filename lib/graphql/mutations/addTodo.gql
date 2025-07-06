@@ -1,6 +1,9 @@
-mutation addTodo($text: String!) {
-  addTodo(text: $text) {
+mutation addTodo($text: String!, $userId: String!) {
+  addTodo(text: $text, userId: $userId) {
     id
     text
+    completed
+    order
+    suggestion
   }
 }

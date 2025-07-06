@@ -1,5 +1,5 @@
-mutation ReorderTodos($todoIds: [Int!]!) {
-  reorderTodos(todoIds: $todoIds) {
+mutation ReorderTodos($todoIds: [Int!]!, $userId: String!) {
+  reorderTodos(todoIds: $todoIds, userId: $userId) {
     id
     text
     completed

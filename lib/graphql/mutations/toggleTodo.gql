@@ -1,5 +1,5 @@
-mutation toggleTodo($id: Int!) {
-  toggleTodo(id: $id) {
+mutation toggleTodo($id: Int!, $userId: String!) {
+  toggleTodo(id: $id, userId: $userId) {
     id
     completed
   }

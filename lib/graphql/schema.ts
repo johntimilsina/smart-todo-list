@@ -8,6 +8,7 @@ export const typeDefs = gql`
     createdAt: String!
     suggestion: [String]
     order: Int!
+    userId: String!
   }
 
   type Query {
@@ -15,10 +16,10 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    addTodo(text: String!): Todo!
-    deleteTodo(id: Int!): Boolean!
-    toggleTodo(id: Int!): Todo!
-    addSuggestion(id: Int!, suggestion: [String]!): Todo!
-    reorderTodos(todoIds: [Int!]!): [Todo!]!
+    addTodo(text: String!, userId: String!): Todo!
+    deleteTodo(id: Int!, userId: String!): Boolean!
+    toggleTodo(id: Int!, userId: String!): Todo!
+    addSuggestion(id: Int!, suggestion: [String!]!, userId: String!): Todo!
+    reorderTodos(todoIds: [Int!]!, userId: String!): [Todo!]!
   }
 `
