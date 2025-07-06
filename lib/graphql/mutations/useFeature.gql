@@ -1,0 +1,8 @@
+mutation UseFeature($userId: String!, $feature: String!) {
+  useFeature(userId: $userId, feature: $feature) {
+    id
+    userId
+    feature
+    usedAt
+  }
+}

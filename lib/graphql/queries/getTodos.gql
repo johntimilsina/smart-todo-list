@@ -1,5 +1,5 @@
-query getTodos {
-  todos {
+query getTodos($userId: String!) {
+  todos(userId: $userId) {
     id
     text
     completed

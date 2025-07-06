@@ -32,6 +32,7 @@ export type Mutation = {
   deleteTodo: Scalars['Boolean']['output'];
   reorderTodos: Array<Todo>;
   toggleTodo: Todo;
+  useFeature: FeatureUsage;
 };
 
 
@@ -65,10 +66,26 @@ export type MutationToggleTodoArgs = {
   userId: Scalars['String']['input'];
 };
 
+
+export type MutationUseFeatureArgs = {
+  feature: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+};
+
 export type Query = {
   __typename?: 'Query';
   featureUsage: Array<FeatureUsage>;
   todos: Array<Todo>;
+};
+
+
+export type QueryFeatureUsageArgs = {
+  userId: Scalars['String']['input'];
+};
+
+
+export type QueryTodosArgs = {
+  userId: Scalars['String']['input'];
 };
 
 export type Todo = {
@@ -123,12 +140,24 @@ export type ToggleTodoMutationVariables = Exact<{
 
 export type ToggleTodoMutation = { __typename?: 'Mutation', toggleTodo: { __typename?: 'Todo', id: number, completed: boolean } };
 
-export type GetFeatureUsageQueryVariables = Exact<{ [key: string]: never; }>;
+export type UseFeatureMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+  feature: Scalars['String']['input'];
+}>;
 
 
-export type GetFeatureUsageQuery = { __typename?: 'Query', featureUsage: Array<{ __typename?: 'FeatureUsage', id: number, userId: string, feature: string, usedAt: string }> };
+export type UseFeatureMutation = { __typename?: 'Mutation', useFeature: { __typename?: 'FeatureUsage', id: number, userId: string, feature: string, usedAt: string } };
 
-export type GetTodosQueryVariables = Exact<{ [key: string]: never; }>;
+export type FeatureUsageQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type FeatureUsageQuery = { __typename?: 'Query', featureUsage: Array<{ __typename?: 'FeatureUsage', id: number, userId: string, feature: string, usedAt: string }> };
+
+export type GetTodosQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
 
 
 export type GetTodosQuery = { __typename?: 'Query', todos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, suggestion?: Array<string | null> | null, order: number, userId: string }> };
@@ -314,9 +343,46 @@ export function useToggleTodoMutation(baseOptions?: Apollo.MutationHookOptions<T
 export type ToggleTodoMutationHookResult = ReturnType<typeof useToggleTodoMutation>;
 export type ToggleTodoMutationResult = Apollo.MutationResult<ToggleTodoMutation>;
 export type ToggleTodoMutationOptions = Apollo.BaseMutationOptions<ToggleTodoMutation, ToggleTodoMutationVariables>;
-export const GetFeatureUsageDocument = gql`
-    query getFeatureUsage {
-  featureUsage {
+export const UseFeatureDocument = gql`
+    mutation UseFeature($userId: String!, $feature: String!) {
+  useFeature(userId: $userId, feature: $feature) {
+    id
+    userId
+    feature
+    usedAt
+  }
+}
+    `;
+export type UseFeatureMutationFn = Apollo.MutationFunction<UseFeatureMutation, UseFeatureMutationVariables>;
+
+/**
+ * __useUseFeatureMutation__
+ *
+ * To run a mutation, you first call `useUseFeatureMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUseFeatureMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [useFeatureMutation, { data, loading, error }] = useUseFeatureMutation({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *      feature: // value for 'feature'
+ *   },
+ * });
+ */
+export function useUseFeatureMutation(baseOptions?: Apollo.MutationHookOptions<UseFeatureMutation, UseFeatureMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UseFeatureMutation, UseFeatureMutationVariables>(UseFeatureDocument, options);
+      }
+export type UseFeatureMutationHookResult = ReturnType<typeof useUseFeatureMutation>;
+export type UseFeatureMutationResult = Apollo.MutationResult<UseFeatureMutation>;
+export type UseFeatureMutationOptions = Apollo.BaseMutationOptions<UseFeatureMutation, UseFeatureMutationVariables>;
+export const FeatureUsageDocument = gql`
+    query FeatureUsage($userId: String!) {
+  featureUsage(userId: $userId) {
     id
     userId
     feature
@@ -326,39 +392,40 @@ export const GetFeatureUsageDocument = gql`
     `;
 
 /**
- * __useGetFeatureUsageQuery__
+ * __useFeatureUsageQuery__
  *
- * To run a query within a React component, call `useGetFeatureUsageQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetFeatureUsageQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useFeatureUsageQuery` and pass it any options that fit your needs.
+ * When your component renders, `useFeatureUsageQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useGetFeatureUsageQuery({
+ * const { data, loading, error } = useFeatureUsageQuery({
  *   variables: {
+ *      userId: // value for 'userId'
  *   },
  * });
  */
-export function useGetFeatureUsageQuery(baseOptions?: Apollo.QueryHookOptions<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>) {
+export function useFeatureUsageQuery(baseOptions: Apollo.QueryHookOptions<FeatureUsageQuery, FeatureUsageQueryVariables> & ({ variables: FeatureUsageQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>(GetFeatureUsageDocument, options);
+        return Apollo.useQuery<FeatureUsageQuery, FeatureUsageQueryVariables>(FeatureUsageDocument, options);
       }
-export function useGetFeatureUsageLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>) {
+export function useFeatureUsageLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<FeatureUsageQuery, FeatureUsageQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>(GetFeatureUsageDocument, options);
+          return Apollo.useLazyQuery<FeatureUsageQuery, FeatureUsageQueryVariables>(FeatureUsageDocument, options);
         }
-export function useGetFeatureUsageSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>) {
+export function useFeatureUsageSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<FeatureUsageQuery, FeatureUsageQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>(GetFeatureUsageDocument, options);
+          return Apollo.useSuspenseQuery<FeatureUsageQuery, FeatureUsageQueryVariables>(FeatureUsageDocument, options);
         }
-export type GetFeatureUsageQueryHookResult = ReturnType<typeof useGetFeatureUsageQuery>;
-export type GetFeatureUsageLazyQueryHookResult = ReturnType<typeof useGetFeatureUsageLazyQuery>;
-export type GetFeatureUsageSuspenseQueryHookResult = ReturnType<typeof useGetFeatureUsageSuspenseQuery>;
-export type GetFeatureUsageQueryResult = Apollo.QueryResult<GetFeatureUsageQuery, GetFeatureUsageQueryVariables>;
+export type FeatureUsageQueryHookResult = ReturnType<typeof useFeatureUsageQuery>;
+export type FeatureUsageLazyQueryHookResult = ReturnType<typeof useFeatureUsageLazyQuery>;
+export type FeatureUsageSuspenseQueryHookResult = ReturnType<typeof useFeatureUsageSuspenseQuery>;
+export type FeatureUsageQueryResult = Apollo.QueryResult<FeatureUsageQuery, FeatureUsageQueryVariables>;
 export const GetTodosDocument = gql`
-    query getTodos {
-  todos {
+    query getTodos($userId: String!) {
+  todos(userId: $userId) {
     id
     text
     completed
@@ -381,10 +448,11 @@ export const GetTodosDocument = gql`
  * @example
  * const { data, loading, error } = useGetTodosQuery({
  *   variables: {
+ *      userId: // value for 'userId'
  *   },
  * });
  */
-export function useGetTodosQuery(baseOptions?: Apollo.QueryHookOptions<GetTodosQuery, GetTodosQueryVariables>) {
+export function useGetTodosQuery(baseOptions: Apollo.QueryHookOptions<GetTodosQuery, GetTodosQueryVariables> & ({ variables: GetTodosQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<GetTodosQuery, GetTodosQueryVariables>(GetTodosDocument, options);
       }

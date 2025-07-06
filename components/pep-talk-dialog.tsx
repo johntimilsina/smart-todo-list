@@ -26,12 +26,22 @@ interface PepTalkDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   todos: Array<{ id: number; text: string }>
+  user: { id: string; is_anonymous: boolean | undefined } | null
+  useFeature: any
+  refetchFeatureUsage: () => void
+  hasUsedFeature: (feature: string) => boolean
+  isAnonymous: boolean | undefined
 }
 
 export function PepTalkDialog({
   open,
   onOpenChange,
   todos,
+  user,
+  useFeature,
+  refetchFeatureUsage,
+  hasUsedFeature,
+  isAnonymous,
 }: PepTalkDialogProps) {
   const [selectedTodoId, setSelectedTodoId] = useState<string | number | null>(
     null
@@ -41,7 +51,10 @@ export function PepTalkDialog({
 
   const handlePepTalk = async () => {
     if (!selectedTodoId) return
-
+    if (isAnonymous && hasUsedFeature("pep_talk")) {
+      toast.error("Anonymous users can only use Pep Talk once. Please log in.")
+      return
+    }
     setPepTalkLoading(true)
     setPepTalkResult(null)
 
@@ -59,6 +72,11 @@ export function PepTalkDialog({
 
       const result = await response.json()
       setPepTalkResult(result.pepTalk)
+      if (user)
+        await useFeature({
+          variables: { userId: user.id, feature: "pep_talk" },
+        })
+      if (refetchFeatureUsage) refetchFeatureUsage()
       toast.success("Pep talk generated! 💪")
     } catch (error) {
       toast.error("Failed to get pep talk")
@@ -69,7 +87,7 @@ export function PepTalkDialog({
 
   const handleClose = () => {
     onOpenChange(false)
-    // Reset state when closing
+
     setTimeout(() => {
       setSelectedTodoId(null)
       setPepTalkResult(null)

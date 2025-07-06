@@ -7,29 +7,17 @@ function isAnonymousUser(userId: string, isAnonymous?: boolean) {
   return !!isAnonymous
 }
 
-async function checkFeatureUsage({
-  userId,
-  feature,
-}: {
-  userId: string
-  feature: string
-}) {
-  const usage = await prisma.featureUsage.findUnique({
-    where: { userId_feature: { userId, feature } },
-  })
-  if (usage)
-    throw new Error(
-      "Anonymous users can only use this feature once. Please log in."
-    )
-  await prisma.featureUsage.create({ data: { userId, feature } })
-}
-
 export const resolvers = {
   Query: {
     todos: async (_: any, { userId }: { userId: string }) =>
       prisma.todo.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
+      }),
+    featureUsage: async (_: any, { userId }: { userId: string }) =>
+      prisma.featureUsage.findMany({
+        where: { userId },
+        orderBy: { usedAt: "desc" },
       }),
   },
   Mutation: {
@@ -84,9 +72,6 @@ export const resolvers = {
         isAnonymous?: boolean
       }
     ) => {
-      if (isAnonymousUser(userId, isAnonymous)) {
-        await checkFeatureUsage({ userId, feature: "add_suggestion" })
-      }
       const todo = await prisma.todo.findUnique({ where: { id } })
       if (!todo || todo.userId !== userId) throw new Error("Not authorized")
       return prisma.todo.update({
@@ -102,9 +87,6 @@ export const resolvers = {
         isAnonymous,
       }: { todoIds: number[]; userId: string; isAnonymous?: boolean }
     ) => {
-      if (isAnonymousUser(userId, isAnonymous)) {
-        await checkFeatureUsage({ userId, feature: "prioritize" })
-      }
       // Update each todo with its new order position, only for this user
       const updatePromises = todoIds.map((id, index) =>
         prisma.todo.update({
@@ -119,6 +101,20 @@ export const resolvers = {
         orderBy: { order: "asc" },
       })
     },
-    // Add similar logic for create-from-image and pep-talk features as needed
+    useFeature: async (_: any, { userId, feature }: { userId: string; feature: string }) => {
+      // Always record the usage, regardless of user type
+      try {
+        return await prisma.featureUsage.create({ data: { userId, feature } })
+      } catch (err: any) {
+        // If already exists, return the existing record
+        if (err.code === 'P2002') {
+          // Unique constraint failed, fetch and return existing
+          return await prisma.featureUsage.findUnique({
+            where: { userId_feature: { userId, feature } },
+          })
+        }
+        throw err
+      }
+    },
   },
 }

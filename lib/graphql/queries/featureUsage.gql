@@ -1,5 +1,5 @@
-query getFeatureUsage {
-  featureUsage {
+query FeatureUsage($userId: String!) {
+  featureUsage(userId: $userId) {
     id
     userId
     feature

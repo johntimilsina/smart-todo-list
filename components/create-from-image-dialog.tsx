@@ -28,12 +28,22 @@ interface CreateFromImageDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAddTodos: (todos: string[]) => Promise<void>
+  user: { id: string; is_anonymous: boolean | undefined } | null
+  useFeature: any
+  refetchFeatureUsage: () => void
+  hasUsedFeature: (feature: string) => boolean
+  isAnonymous: boolean | undefined
 }
 
 export function CreateFromImageDialog({
   open,
   onOpenChange,
   onAddTodos,
+  user,
+  useFeature,
+  refetchFeatureUsage,
+  hasUsedFeature,
+  isAnonymous,
 }: CreateFromImageDialogProps) {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imageTodosLoading, setImageTodosLoading] = useState(false)
@@ -63,6 +73,12 @@ export function CreateFromImageDialog({
   const handleExtractTodosFromImage = async () => {
     if (!imageFile) return
 
+    if (isAnonymous && hasUsedFeature("create_from_image")) {
+      toast.error(
+        "Anonymous users can only use Create from Image once. Please log in."
+      )
+      return
+    }
     setImageTodosLoading(true)
     setImageTodosResult(null)
 
@@ -79,6 +95,12 @@ export function CreateFromImageDialog({
 
       const result = await response.json()
       setImageTodosResult(result.todos)
+
+      if (user)
+        await useFeature({
+          variables: { userId: user.id, feature: "create_from_image" },
+        })
+      if (refetchFeatureUsage) refetchFeatureUsage()
       toast.success(`Found ${result.todos.length} tasks in your image! 🎉`)
     } catch (error) {
       toast.error("Failed to extract todos from image")
@@ -89,10 +111,10 @@ export function CreateFromImageDialog({
 
   const handleAddExtractedTodos = async () => {
     if (!imageTodosResult || imageTodosResult.length === 0) return
-
     setAddingTodos(true)
     try {
       await onAddTodos(imageTodosResult)
+      if (refetchFeatureUsage) refetchFeatureUsage()
       handleClose()
       toast.success("Tasks added successfully! 📝")
     } catch (error) {
@@ -104,7 +126,6 @@ export function CreateFromImageDialog({
 
   const handleClose = () => {
     onOpenChange(false)
-    // Reset state when closing
     setTimeout(() => {
       setImageFile(null)
       setImageTodosResult(null)
@@ -133,8 +154,8 @@ export function CreateFromImageDialog({
                 Create from Image
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
-                Upload a photo of your handwritten or printed todo list and
-                I will extract the tasks
+                Upload a photo of your handwritten or printed todo list and I
+                will extract the tasks
               </DialogDescription>
             </div>
           </div>

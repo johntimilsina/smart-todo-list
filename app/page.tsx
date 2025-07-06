@@ -33,23 +33,29 @@ import {
   useToggleTodoMutation,
   useAddSuggestionMutation,
   useReorderTodosMutation,
+  useUseFeatureMutation,
+  useFeatureUsageQuery,
 } from "@/lib/graphql/generated/graphql"
 
 export default function Page() {
   const { user, loading: userLoading } = useSupabaseUser()
   const isAnonymous = user?.is_anonymous
-  const { data, loading, error, refetch } = useGetTodosQuery()
+  // Fix: Pass userId to useGetTodosQuery
+  const { data, loading, error, refetch } = useGetTodosQuery({
+    variables: { userId: user?.id ?? "" },
+    skip: !user,
+  })
   const [addTodo] = useAddTodoMutation()
   const [deleteTodo] = useDeleteTodoMutation()
   const [toggleTodo] = useToggleTodoMutation()
   const [addSuggestion] = useAddSuggestionMutation()
   const [reorderTodos] = useReorderTodosMutation()
-
-  const [anonFeatureUsage, setAnonFeatureUsage] = useState({
-    pepTalk: false,
-    createFromImage: false,
-    prioritize: false,
+  const [useFeature] = useUseFeatureMutation()
+  const { data: featureUsageData, refetch: refetchFeatureUsage } = useFeatureUsageQuery({
+    variables: { userId: user?.id ?? "" },
+    skip: !user,
   })
+
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   const [text, setText] = useState("")
@@ -118,11 +124,19 @@ export default function Page() {
     }
   }
 
+  // Helper to check if anonymous user has used a feature
+  const hasUsedFeature = (feature: string) => {
+    if (!isAnonymous) return false
+    return (
+      featureUsageData?.featureUsage?.some((f) => f.feature === feature) ?? false
+    )
+  }
+
   const handleSuggestSubtasks = async (todoId: number, e: React.MouseEvent) => {
     e.stopPropagation()
     const todo = data?.todos.find((t: { id: number }) => t.id === todoId)
     if (!todo) return
-    if (isAnonymous && anonFeatureUsage.pepTalk) {
+    if (isAnonymous && hasUsedFeature("pep_talk")) {
       setShowLoginPrompt(true)
       toast.error("Anonymous users can only use Pep Talk once. Please log in.")
       return
@@ -152,8 +166,9 @@ export default function Page() {
           userId: user?.id ?? "",
         },
       })
-      if (isAnonymous) setAnonFeatureUsage((u) => ({ ...u, pepTalk: true }))
+      if (user) await useFeature({ variables: { userId: user.id, feature: "pep_talk" } })
       refetch()
+      refetchFeatureUsage()
       setExpandedSuggestions(todoId)
       toast.success("AI suggestions generated!")
     } catch (error: any) {
@@ -169,6 +184,11 @@ export default function Page() {
 
   const onSortEnd = async (oldIndex: number, newIndex: number) => {
     if (oldIndex === newIndex) return
+    if (isAnonymous && hasUsedFeature("prioritize")) {
+      setShowLoginPrompt(true)
+      toast.error("Anonymous users can only prioritize once. Please log in.")
+      return
+    }
 
     const todos = data?.todos || []
     const sortedTodos = [...todos].sort((a, b) => {
@@ -188,7 +208,8 @@ export default function Page() {
     try {
       const todoIds = reorderedTodos.map((todo) => todo.id)
       await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
-      if (isAnonymous) setAnonFeatureUsage((u) => ({ ...u, prioritize: true }))
+      if (user) await useFeature({ variables: { userId: user.id, feature: "prioritize" } })
+      refetchFeatureUsage()
       toast.success("Tasks reordered successfully")
     } catch (error: any) {
       if (isAnonymous && error?.message?.includes("feature once")) {
@@ -205,7 +226,7 @@ export default function Page() {
 
   const handlePrioritize = async () => {
     if (!data?.todos || data.todos.length < 3) return
-    if (isAnonymous && anonFeatureUsage.prioritize) {
+    if (isAnonymous && hasUsedFeature("prioritize")) {
       setShowLoginPrompt(true)
       toast.error("Anonymous users can only prioritize once. Please log in.")
       return
@@ -265,6 +286,8 @@ export default function Page() {
         try {
           const todoIds = finalOrder.map((todo) => todo.id)
           await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
+          if (user) await useFeature({ variables: { userId: user.id, feature: "prioritize" } })
+          refetchFeatureUsage()
           toast.success("Tasks reordered successfully")
         } catch (error: any) {
           if (isAnonymous && error?.message?.includes("feature once")) {
@@ -278,7 +301,8 @@ export default function Page() {
           setTimeout(() => setOptimisticTodos([]), 100)
         }
       }
-
+      if (user) await useFeature({ variables: { userId: user.id, feature: "prioritize" } })
+      refetchFeatureUsage()
       toast.success("Tasks prioritized!")
     } catch (error) {
       toast.error("Failed to prioritize tasks")
@@ -288,21 +312,26 @@ export default function Page() {
   }
 
   const handleAddTodosFromImage = async (todos: string[]) => {
-    if (isAnonymous && anonFeatureUsage.createFromImage) {
+    // Check restriction BEFORE adding todos
+    if (isAnonymous && hasUsedFeature("create_from_image")) {
       setShowLoginPrompt(true)
-      toast.error(
-        "Anonymous users can only use Create from Image once. Please log in."
-      )
+      toast.error("Anonymous users can only use Create from Image once. Please log in.")
       return
     }
-    await Promise.all(
-      todos.map((text) =>
-        addTodo({ variables: { text, userId: user?.id ?? "" } })
+    let added = 0
+    try {
+      await Promise.all(
+        todos.map(async (text) => {
+          await addTodo({ variables: { text, userId: user?.id ?? "" } })
+          added++
+        })
       )
-    )
-    if (isAnonymous)
-      setAnonFeatureUsage((u) => ({ ...u, createFromImage: true }))
-    refetch()
+      if (user && added > 0) await useFeature({ variables: { userId: user.id, feature: "create_from_image" } })
+      refetch()
+      refetchFeatureUsage()
+    } catch (error) {
+      toast.error("Failed to add todos from image")
+    }
   }
 
   if (userLoading) {
@@ -555,12 +584,22 @@ export default function Page() {
         open={pepTalkOpen}
         onOpenChange={setPepTalkOpen}
         todos={data?.todos || []}
+        user={user}
+        useFeature={useFeature}
+        refetchFeatureUsage={refetchFeatureUsage}
+        hasUsedFeature={hasUsedFeature}
+        isAnonymous={isAnonymous}
       />
 
       <CreateFromImageDialog
         open={imageDialogOpen}
         onOpenChange={setImageDialogOpen}
         onAddTodos={handleAddTodosFromImage}
+        user={user}
+        useFeature={useFeature}
+        refetchFeatureUsage={refetchFeatureUsage}
+        hasUsedFeature={hasUsedFeature}
+        isAnonymous={isAnonymous}
       />
 
       {/* Show login prompt modal if needed */}
