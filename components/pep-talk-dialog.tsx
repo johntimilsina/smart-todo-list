@@ -22,12 +22,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { SimpleSelect } from "@/components/ui/simple-select"
 
+import { Todo } from "@/lib/graphql/generated/graphql"
+
 interface PepTalkDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  todos: Array<{ id: number; text: string }>
+  todos: Todo[]
   user: { id: string; is_anonymous: boolean | undefined } | null
-  useFeature: any
+  recordFeatureUsage: ReturnType<typeof import("@/lib/graphql/generated/graphql").useRecordFeatureUsageMutation>[0]
   refetchFeatureUsage: () => void
   hasUsedFeature: (feature: string) => boolean
   isAnonymous: boolean | undefined
@@ -38,7 +40,7 @@ export function PepTalkDialog({
   onOpenChange,
   todos,
   user,
-  useFeature,
+  recordFeatureUsage,
   refetchFeatureUsage,
   hasUsedFeature,
   isAnonymous,
@@ -73,13 +75,14 @@ export function PepTalkDialog({
       const result = await response.json()
       setPepTalkResult(result.pepTalk)
       if (user)
-        await useFeature({
+        await recordFeatureUsage({
           variables: { userId: user.id, feature: "pep_talk" },
         })
       if (refetchFeatureUsage) refetchFeatureUsage()
       toast.success("Pep talk generated! 💪")
     } catch (error) {
       toast.error("Failed to get pep talk")
+      console.error("Pep Talk Error:", error)
     } finally {
       setPepTalkLoading(false)
     }

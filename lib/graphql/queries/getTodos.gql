@@ -6,5 +6,6 @@ query getTodos($userId: String!) {
     suggestion
     order
     userId
+    createdAt
   }
 }

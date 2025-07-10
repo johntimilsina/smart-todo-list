@@ -6,12 +6,14 @@ import {
   ChevronUp,
   Loader2,
   GripVertical,
-} from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { SortableItem } from "react-easy-sort"
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { SortableItem } from "react-easy-sort";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+import { Todo } from "@/lib/graphql/generated/graphql";
 
 export function TodoItem({
   todo,
@@ -23,14 +25,14 @@ export function TodoItem({
   expandedSuggestions,
   isReordering,
 }: {
-  todo: any
-  index: number
-  handleToggle: (id: number) => void
-  handleSuggestSubtasks: (id: number, e: React.MouseEvent) => void
-  handleDelete: (id: number, e: React.MouseEvent) => void
-  loadingSuggestions: number | null
-  expandedSuggestions: number | null
-  isReordering: boolean
+  todo: Todo;
+  index: number;
+  handleToggle: (id: number) => void;
+  handleSuggestSubtasks: (id: number, e: React.MouseEvent) => void;
+  handleDelete: (id: number, e: React.MouseEvent) => void;
+  loadingSuggestions: number | null;
+  expandedSuggestions: number | null;
+  isReordering: boolean;
 }) {
   return (
     <SortableItem>
@@ -61,7 +63,7 @@ export function TodoItem({
                   }`}
                   onClick={() => {
                     if (expandedSuggestions !== todo.id && !isReordering) {
-                      handleToggle(todo.id)
+                      handleToggle(todo.id);
                     }
                   }}
                 >
@@ -139,8 +141,10 @@ export function TodoItem({
                         </span>
                       </div>
                       <ol className="space-y-2 list-none">
-                        {todo.suggestion.map(
-                          (suggestion: string, index: number) => (
+                        {todo?.suggestion?.map((suggestion, index) => {
+                          if (suggestion == null) return null;
+
+                          return (
                             <li key={index} className="flex items-start gap-3">
                               <span className="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
                                 {index + 1}
@@ -149,8 +153,8 @@ export function TodoItem({
                                 {suggestion}
                               </span>
                             </li>
-                          )
-                        )}
+                          );
+                        })}
                       </ol>
                     </div>
                   </motion.div>
@@ -160,5 +164,5 @@ export function TodoItem({
         </Card>
       </motion.div>
     </SortableItem>
-  )
+  );
 }

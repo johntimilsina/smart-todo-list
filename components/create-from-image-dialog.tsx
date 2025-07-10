@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useRef } from "react"
+import type React from "react";
+import { useState, useRef } from "react";
 import {
   ScanSearch,
   Loader2,
@@ -9,9 +9,9 @@ import {
   ImageIcon,
   CheckCircle,
   Plus,
-} from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { toast } from "sonner"
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -19,20 +19,22 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CreateFromImageDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onAddTodos: (todos: string[]) => Promise<void>
-  user: { id: string; is_anonymous: boolean | undefined } | null
-  useFeature: any
-  refetchFeatureUsage: () => void
-  hasUsedFeature: (feature: string) => boolean
-  isAnonymous: boolean | undefined
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAddTodos: (todos: string[]) => Promise<void>;
+  user: { id: string; is_anonymous: boolean | undefined } | null;
+  recordFeatureUsage: ReturnType<
+    typeof import("@/lib/graphql/generated/graphql").useRecordFeatureUsageMutation
+  >[0];
+  refetchFeatureUsage: () => void;
+  hasUsedFeature: (feature: string) => boolean;
+  isAnonymous: boolean | undefined;
 }
 
 export function CreateFromImageDialog({
@@ -40,106 +42,108 @@ export function CreateFromImageDialog({
   onOpenChange,
   onAddTodos,
   user,
-  useFeature,
+  recordFeatureUsage,
   refetchFeatureUsage,
   hasUsedFeature,
   isAnonymous,
 }: CreateFromImageDialogProps) {
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imageTodosLoading, setImageTodosLoading] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageTodosLoading, setImageTodosLoading] = useState(false);
   const [imageTodosResult, setImageTodosResult] = useState<string[] | null>(
     null
-  )
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [addingTodos, setAddingTodos] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  );
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [addingTodos, setAddingTodos] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null
-    setImageFile(file)
-    setImageTodosResult(null)
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    setImageTodosResult(null);
 
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     } else {
-      setImagePreview(null)
+      setImagePreview(null);
     }
-  }
+  };
 
   const handleExtractTodosFromImage = async () => {
-    if (!imageFile) return
+    if (!imageFile) return;
 
     if (isAnonymous && hasUsedFeature("create_from_image")) {
       toast.error(
         "Anonymous users can only use Create from Image once. Please log in."
-      )
-      return
+      );
+      return;
     }
-    setImageTodosLoading(true)
-    setImageTodosResult(null)
+    setImageTodosLoading(true);
+    setImageTodosResult(null);
 
     try {
-      const formData = new FormData()
-      formData.append("image", imageFile)
+      const formData = new FormData();
+      formData.append("image", imageFile);
 
       const response = await fetch("/api/create-from-image", {
         method: "POST",
         body: formData,
-      })
+      });
 
-      if (!response.ok) throw new Error("Failed to extract todos from image")
+      if (!response.ok) throw new Error("Failed to extract todos from image");
 
-      const result = await response.json()
-      setImageTodosResult(result.todos)
+      const result = await response.json();
+      setImageTodosResult(result.todos);
 
       if (user)
-        await useFeature({
+        await recordFeatureUsage({
           variables: { userId: user.id, feature: "create_from_image" },
-        })
-      if (refetchFeatureUsage) refetchFeatureUsage()
-      toast.success(`Found ${result.todos.length} tasks in your image! 🎉`)
+        });
+      if (refetchFeatureUsage) refetchFeatureUsage();
+      toast.success(`Found ${result.todos.length} tasks in your image! 🎉`);
     } catch (error) {
-      toast.error("Failed to extract todos from image")
+      toast.error("Failed to extract todos from image");
+      console.error("Image Extraction Error:", error);
     } finally {
-      setImageTodosLoading(false)
+      setImageTodosLoading(false);
     }
-  }
+  };
 
   const handleAddExtractedTodos = async () => {
-    if (!imageTodosResult || imageTodosResult.length === 0) return
-    setAddingTodos(true)
+    if (!imageTodosResult || imageTodosResult.length === 0) return;
+    setAddingTodos(true);
     try {
-      await onAddTodos(imageTodosResult)
-      if (refetchFeatureUsage) refetchFeatureUsage()
-      handleClose()
-      toast.success("Tasks added successfully! 📝")
+      await onAddTodos(imageTodosResult);
+      if (refetchFeatureUsage) refetchFeatureUsage();
+      handleClose();
+      toast.success("Tasks added successfully! 📝");
     } catch (error) {
-      toast.error("Failed to add todos from image")
+      toast.error("Failed to add todos from image");
+      console.error("Add Todos Error:", error);
     } finally {
-      setAddingTodos(false)
+      setAddingTodos(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    onOpenChange(false)
+    onOpenChange(false);
     setTimeout(() => {
-      setImageFile(null)
-      setImageTodosResult(null)
-      setImagePreview(null)
-      setAddingTodos(false)
+      setImageFile(null);
+      setImageTodosResult(null);
+      setImagePreview(null);
+      setAddingTodos(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = ""
+        fileInputRef.current.value = "";
       }
-    }, 200)
-  }
+    }, 200);
+  };
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -316,5 +320,5 @@ export function CreateFromImageDialog({
         </ScrollArea>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

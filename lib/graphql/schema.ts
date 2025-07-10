@@ -29,6 +29,6 @@ export const typeDefs = gql`
     toggleTodo(id: Int!, userId: String!): Todo!
     addSuggestion(id: Int!, suggestion: [String!]!, userId: String!): Todo!
     reorderTodos(todoIds: [Int!]!, userId: String!): [Todo!]!
-    useFeature(userId: String!, feature: String!): FeatureUsage!
+    recordFeatureUsage(userId: String!, feature: String!): FeatureUsage!
   }
 `

@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
 //TODO: implement captcha if anonymous users is enabled
 
-import type React from "react"
-import { useState } from "react"
+import type React from "react";
+import { useState } from "react";
 import {
   Plus,
   Sparkles,
@@ -12,19 +12,20 @@ import {
   ScanSearch,
   DumbbellIcon as BicepsFlexed,
   XCircle,
-} from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { toast } from "sonner"
-import SortableList from "react-easy-sort"
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import SortableList from "react-easy-sort";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Header } from "@/components/header"
-import { TodoItem } from "@/components/TodoItem"
-import { PepTalkDialog } from "@/components/pep-talk-dialog"
-import { CreateFromImageDialog } from "@/components/create-from-image-dialog"
-import { useSupabaseUser } from "@/components/AuthProvider"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Header } from "@/components/header";
+
+import { PepTalkDialog } from "@/components/pep-talk-dialog";
+import { CreateFromImageDialog } from "@/components/create-from-image-dialog";
+import { TodoItem } from "@/components/TodoItem";
+import { useSupabaseUser } from "@/components/AuthProvider";
 
 import {
   useGetTodosQuery,
@@ -33,131 +34,143 @@ import {
   useToggleTodoMutation,
   useAddSuggestionMutation,
   useReorderTodosMutation,
-  useUseFeatureMutation,
+  useRecordFeatureUsageMutation,
   useFeatureUsageQuery,
-} from "@/lib/graphql/generated/graphql"
+  Todo,
+} from "@/lib/graphql/generated/graphql";
 
 export default function Page() {
-  const { user, loading: userLoading } = useSupabaseUser()
-  const isAnonymous = user?.is_anonymous
+  const { user, loading: userLoading } = useSupabaseUser();
+  const isAnonymous = user?.is_anonymous;
   // Fix: Pass userId to useGetTodosQuery
   const { data, loading, error, refetch } = useGetTodosQuery({
     variables: { userId: user?.id ?? "" },
     skip: !user,
-  })
-  const [addTodo] = useAddTodoMutation()
-  const [deleteTodo] = useDeleteTodoMutation()
-  const [toggleTodo] = useToggleTodoMutation()
-  const [addSuggestion] = useAddSuggestionMutation()
-  const [reorderTodos] = useReorderTodosMutation()
-  const [useFeature] = useUseFeatureMutation()
-  const { data: featureUsageData, refetch: refetchFeatureUsage } = useFeatureUsageQuery({
-    variables: { userId: user?.id ?? "" },
-    skip: !user,
-  })
+  });
+  const [addTodo] = useAddTodoMutation();
+  const [deleteTodo] = useDeleteTodoMutation();
+  const [toggleTodo] = useToggleTodoMutation();
+  const [addSuggestion] = useAddSuggestionMutation();
+  const [reorderTodos] = useReorderTodosMutation();
+  const [recordFeatureUsage] = useRecordFeatureUsageMutation();
+  const { data: featureUsageData, refetch: refetchFeatureUsage } =
+    useFeatureUsageQuery({
+      variables: { userId: user?.id ?? "" },
+      skip: !user,
+    });
 
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-  const [text, setText] = useState("")
+  const [text, setText] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState<number | null>(
     null
-  )
+  );
   const [expandedSuggestions, setExpandedSuggestions] = useState<number | null>(
     null
-  )
-  const [isReordering, setIsReordering] = useState(false)
-  const [optimisticTodos, setOptimisticTodos] = useState<any[]>([])
-  const [prioritizing, setPrioritizing] = useState(false)
+  );
+  const [isReordering, setIsReordering] = useState(false);
+  const [optimisticTodos, setOptimisticTodos] = useState<Todo[]>([]);
+  const [prioritizing, setPrioritizing] = useState(false);
   const [prioritizedResult, setPrioritizedResult] = useState<string | null>(
     null
-  )
-  const [pepTalkOpen, setPepTalkOpen] = useState(false)
-  const [imageDialogOpen, setImageDialogOpen] = useState(false)
+  );
+  const [pepTalkOpen, setPepTalkOpen] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
-  console.log("user", user)
+  console.log("user", user);
 
   const handleAdd = async () => {
-    if (!text.trim() || !user) return
+    if (!text.trim() || !user) return;
     if (isAnonymous && (data?.todos?.length ?? 0) >= 3) {
-      setShowLoginPrompt(true)
+      setShowLoginPrompt(true);
       toast.error(
         "Anonymous users can only add 3 todos. Please log in to add more."
-      )
-      return
+      );
+      return;
     }
     try {
-      await addTodo({ variables: { text, userId: user.id } })
-      setText("")
-      refetch()
-      toast.success("Task added successfully")
-    } catch (error: any) {
-      if (isAnonymous && error?.message?.includes("add 3 todos")) {
-        setShowLoginPrompt(true)
+      await addTodo({ variables: { text, userId: user.id } });
+      setText("");
+      refetch();
+      toast.success("Task added successfully");
+    } catch (error: unknown) {
+      if (
+        isAnonymous &&
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: string }).message === "string" &&
+        (error as { message: string }).message.includes("add 3 todos")
+      ) {
+        setShowLoginPrompt(true);
       }
-      toast.error("Failed to add task")
+      toast.error("Failed to add task");
     }
-  }
+  };
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     try {
-      await deleteTodo({ variables: { id, userId: user?.id ?? "" } })
-      refetch()
-      toast.success("Task deleted")
+      await deleteTodo({ variables: { id, userId: user?.id ?? "" } });
+      refetch();
+      toast.success("Task deleted");
     } catch (error) {
-      toast.error("Failed to delete task")
+      toast.error("Failed to delete task");
+      console.error("Delete error:", error);
     }
-  }
+  };
 
   const handleToggle = async (id: number) => {
-    const todo = data?.todos.find((t: { id: number }) => t.id === id)
+    const todo = data?.todos.find((t) => t.id === id);
     try {
-      await toggleTodo({ variables: { id, userId: user?.id ?? "" } })
-      refetch()
+      await toggleTodo({ variables: { id, userId: user?.id ?? "" } });
+      refetch();
       if (todo?.completed) {
-        toast.success("Task marked as incomplete")
+        toast.success("Task marked as incomplete");
       } else {
-        toast.success("Task completed! 🎉")
+        toast.success("Task completed! 🎉");
       }
     } catch (error) {
-      toast.error("Failed to update task")
+      toast.error("Failed to update task");
+      console.error("Toggle error:", error);
     }
-  }
+  };
 
   // Helper to check if anonymous user has used a feature
   const hasUsedFeature = (feature: string) => {
-    if (!isAnonymous) return false
+    if (!isAnonymous) return false;
     return (
-      featureUsageData?.featureUsage?.some((f) => f.feature === feature) ?? false
-    )
-  }
+      featureUsageData?.featureUsage?.some((f) => f.feature === feature) ??
+      false
+    );
+  };
 
   const handleSuggestSubtasks = async (todoId: number, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const todo = data?.todos.find((t: { id: number }) => t.id === todoId)
-    if (!todo) return
+    e.stopPropagation();
+    const todo = data?.todos.find((t) => t.id === todoId);
+    if (!todo) return;
     if (isAnonymous && hasUsedFeature("pep_talk")) {
-      setShowLoginPrompt(true)
-      toast.error("Anonymous users can only use Pep Talk once. Please log in.")
-      return
+      setShowLoginPrompt(true);
+      toast.error("Anonymous users can only use Pep Talk once. Please log in.");
+      return;
     }
     if (todo.suggestion && todo.suggestion.length > 0) {
-      setExpandedSuggestions(expandedSuggestions === todoId ? null : todoId)
-      return
+      setExpandedSuggestions(expandedSuggestions === todoId ? null : todoId);
+      return;
     }
 
-    setLoadingSuggestions(todoId)
+    setLoadingSuggestions(todoId);
     try {
       const response = await fetch("/api/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: todo.text }),
-      })
+      });
 
-      if (!response.ok) throw new Error("Failed to fetch suggestions")
+      if (!response.ok) throw new Error("Failed to fetch suggestions");
 
-      const dataRes = await response.json()
-      const { suggestions } = dataRes
+      const dataRes = await response.json();
+      const { suggestions } = dataRes;
 
       await addSuggestion({
         variables: {
@@ -165,174 +178,216 @@ export default function Page() {
           suggestion: suggestions,
           userId: user?.id ?? "",
         },
-      })
-      if (user) await useFeature({ variables: { userId: user.id, feature: "pep_talk" } })
-      refetch()
-      refetchFeatureUsage()
-      setExpandedSuggestions(todoId)
-      toast.success("AI suggestions generated!")
-    } catch (error: any) {
-      if (isAnonymous && error?.message?.includes("feature once")) {
-        setShowLoginPrompt(true)
+      });
+      if (user)
+        await recordFeatureUsage({
+          variables: { userId: user.id, feature: "pep_talk" },
+        });
+      refetch();
+      refetchFeatureUsage();
+      setExpandedSuggestions(todoId);
+      toast.success("AI suggestions generated!");
+    } catch (error: unknown) {
+      if (
+        isAnonymous &&
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: string }).message === "string" &&
+        (error as { message: string }).message.includes("feature once")
+      ) {
+        setShowLoginPrompt(true);
       }
-      console.error(error)
-      toast.error("Failed to generate suggestions")
+      console.error(error);
+      toast.error("Failed to generate suggestions");
     } finally {
-      setLoadingSuggestions(null)
+      setLoadingSuggestions(null);
     }
-  }
+  };
 
   const onSortEnd = async (oldIndex: number, newIndex: number) => {
-    if (oldIndex === newIndex) return
+    if (oldIndex === newIndex) return;
     if (isAnonymous && hasUsedFeature("prioritize")) {
-      setShowLoginPrompt(true)
-      toast.error("Anonymous users can only prioritize once. Please log in.")
-      return
+      setShowLoginPrompt(true);
+      toast.error("Anonymous users can only prioritize once. Please log in.");
+      return;
     }
 
-    const todos = data?.todos || []
+    const todos = data?.todos || [];
     const sortedTodos = [...todos].sort((a, b) => {
       if (a.order !== undefined && b.order !== undefined) {
-        return a.order - b.order
+        return a.order - b.order;
       }
-      return a.id - b.id
-    })
+      return a.id - b.id;
+    });
 
-    const reorderedTodos = [...sortedTodos]
-    const [removed] = reorderedTodos.splice(oldIndex, 1)
-    reorderedTodos.splice(newIndex, 0, removed)
+    const reorderedTodos = [...sortedTodos];
+    const [removed] = reorderedTodos.splice(oldIndex, 1);
+    reorderedTodos.splice(newIndex, 0, removed);
 
-    setOptimisticTodos(reorderedTodos)
-    setIsReordering(true)
+    setOptimisticTodos(reorderedTodos);
+    setIsReordering(true);
 
     try {
-      const todoIds = reorderedTodos.map((todo) => todo.id)
-      await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
-      if (user) await useFeature({ variables: { userId: user.id, feature: "prioritize" } })
-      refetchFeatureUsage()
-      toast.success("Tasks reordered successfully")
-    } catch (error: any) {
-      if (isAnonymous && error?.message?.includes("feature once")) {
-        setShowLoginPrompt(true)
+      const todoIds = reorderedTodos.map((todo) => todo.id);
+      await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } });
+      if (user)
+        await recordFeatureUsage({
+          variables: { userId: user.id, feature: "prioritize" },
+        });
+      refetchFeatureUsage();
+      toast.success("Tasks reordered successfully");
+    } catch (error: unknown) {
+      if (
+        isAnonymous &&
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: string }).message === "string" &&
+        (error as { message: string }).message.includes("feature once")
+      ) {
+        setShowLoginPrompt(true);
       }
-      toast.error("Failed to reorder tasks")
-      setOptimisticTodos([])
-      refetch()
+      toast.error("Failed to reorder tasks");
+      setOptimisticTodos([]);
+      refetch();
     } finally {
-      setIsReordering(false)
-      setTimeout(() => setOptimisticTodos([]), 100)
+      setIsReordering(false);
+      setTimeout(() => setOptimisticTodos([]), 100);
     }
-  }
+  };
 
   const handlePrioritize = async () => {
-    if (!data?.todos || data.todos.length < 3) return
+    if (!data?.todos || data.todos.length < 3) return;
     if (isAnonymous && hasUsedFeature("prioritize")) {
-      setShowLoginPrompt(true)
-      toast.error("Anonymous users can only prioritize once. Please log in.")
-      return
+      setShowLoginPrompt(true);
+      toast.error("Anonymous users can only prioritize once. Please log in.");
+      return;
     }
-    setPrioritizing(true)
-    setPrioritizedResult(null)
+    setPrioritizing(true);
+    setPrioritizedResult(null);
 
     try {
-      const todosText = data.todos.map((t: any) => t.text)
+      const todosText = data.todos.map((t: Todo) => t.text);
       const response = await fetch("/api/prioritize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ todos: todosText }),
-      })
+      });
 
-      if (!response.ok) throw new Error("Failed to prioritize tasks")
+      if (!response.ok) throw new Error("Failed to prioritize tasks");
 
-      const result = await response.json()
-      setPrioritizedResult(result.prioritized)
+      const result = await response.json();
+      setPrioritizedResult(result.prioritized);
 
       if (
         result.ordered &&
         Array.isArray(result.ordered) &&
         result.ordered.length > 0
       ) {
-        const todosCopy = [...data.todos]
+        const todosCopy = [...data.todos];
         const orderedTodos = result.ordered
           .map((orderedText: string) => {
-            let bestMatch = null
-            let bestScore = 0
+            let bestMatch = null;
+            let bestScore = 0;
 
             for (const todo of todosCopy) {
-              const orderedWords = orderedText.toLowerCase().split(/\s+/)
-              const todoWords = todo.text.toLowerCase().split(/\s+/)
+              const orderedWords = orderedText.toLowerCase().split(/\s+/);
+              const todoWords = todo.text.toLowerCase().split(/\s+/);
               const matchCount = orderedWords.filter((w) =>
                 todoWords.includes(w)
-              ).length
+              ).length;
 
               if (matchCount > bestScore) {
-                bestScore = matchCount
-                bestMatch = todo
+                bestScore = matchCount;
+                bestMatch = todo;
               }
             }
 
             if (bestMatch) {
-              todosCopy.splice(todosCopy.indexOf(bestMatch), 1)
-              return bestMatch
+              todosCopy.splice(todosCopy.indexOf(bestMatch), 1);
+              return bestMatch;
             }
-            return null
+            return null;
           })
-          .filter(Boolean)
+          .filter(Boolean);
 
-        const finalOrder = [...orderedTodos, ...todosCopy]
-        setOptimisticTodos(finalOrder)
-        setIsReordering(true)
+        const finalOrder = [...orderedTodos, ...todosCopy];
+        setOptimisticTodos(finalOrder);
+        setIsReordering(true);
 
         try {
-          const todoIds = finalOrder.map((todo) => todo.id)
-          await reorderTodos({ variables: { todoIds, userId: user?.id ?? "" } })
-          if (user) await useFeature({ variables: { userId: user.id, feature: "prioritize" } })
-          refetchFeatureUsage()
-          toast.success("Tasks reordered successfully")
-        } catch (error: any) {
-          if (isAnonymous && error?.message?.includes("feature once")) {
-            setShowLoginPrompt(true)
+          const todoIds = finalOrder.map((todo) => todo.id);
+          await reorderTodos({
+            variables: { todoIds, userId: user?.id ?? "" },
+          });
+          if (user)
+            await recordFeatureUsage({
+              variables: { userId: user.id, feature: "prioritize" },
+            });
+          refetchFeatureUsage();
+          toast.success("Tasks reordered successfully");
+        } catch (error: unknown) {
+          if (
+            isAnonymous &&
+            typeof error === "object" &&
+            error !== null &&
+            "message" in error &&
+            typeof (error as { message?: string }).message === "string" &&
+            (error as { message: string }).message.includes("feature once")
+          ) {
+            setShowLoginPrompt(true);
           }
-          toast.error("Failed to reorder tasks")
-          setOptimisticTodos([])
-          refetch()
+          toast.error("Failed to reorder tasks");
+          setOptimisticTodos([]);
+          refetch();
         } finally {
-          setIsReordering(false)
-          setTimeout(() => setOptimisticTodos([]), 100)
+          setIsReordering(false);
+          setTimeout(() => setOptimisticTodos([]), 100);
         }
       }
-      if (user) await useFeature({ variables: { userId: user.id, feature: "prioritize" } })
-      refetchFeatureUsage()
-      toast.success("Tasks prioritized!")
+      if (user)
+        await recordFeatureUsage({
+          variables: { userId: user.id, feature: "prioritize" },
+        });
+      refetchFeatureUsage();
+      toast.success("Tasks prioritized!");
     } catch (error) {
-      toast.error("Failed to prioritize tasks")
+      toast.error("Failed to prioritize tasks");
+      console.error("Prioritize error:", error);
     } finally {
-      setPrioritizing(false)
+      setPrioritizing(false);
     }
-  }
+  };
 
   const handleAddTodosFromImage = async (todos: string[]) => {
     // Check restriction BEFORE adding todos
     if (isAnonymous && hasUsedFeature("create_from_image")) {
-      setShowLoginPrompt(true)
-      toast.error("Anonymous users can only use Create from Image once. Please log in.")
-      return
+      setShowLoginPrompt(true);
+      toast.error(
+        "Anonymous users can only use Create from Image once. Please log in."
+      );
+      return;
     }
-    let added = 0
+    let added = 0;
     try {
       await Promise.all(
         todos.map(async (text) => {
-          await addTodo({ variables: { text, userId: user?.id ?? "" } })
-          added++
+          await addTodo({ variables: { text, userId: user?.id ?? "" } });
+          added++;
         })
-      )
-      if (user && added > 0) await useFeature({ variables: { userId: user.id, feature: "create_from_image" } })
-      refetch()
-      refetchFeatureUsage()
+      );
+      if (user && added > 0)
+        await recordFeatureUsage({
+          variables: { userId: user.id, feature: "create_from_image" },
+        });
+      refetch();
+      refetchFeatureUsage();
     } catch (error) {
-      toast.error("Failed to add todos from image")
+      toast.error("Failed to add todos from image");
+      console.error("Add from image error:", error);
     }
-  }
+  };
 
   if (userLoading) {
     return (
@@ -346,7 +401,7 @@ export default function Page() {
           <span className="text-lg font-medium">Loading user...</span>
         </motion.div>
       </div>
-    )
+    );
   }
   if (!user) {
     return (
@@ -361,7 +416,7 @@ export default function Page() {
           </span>
         </motion.div>
       </div>
-    )
+    );
   }
 
   if (loading) {
@@ -376,7 +431,7 @@ export default function Page() {
           <span className="text-lg font-medium">Loading your tasks...</span>
         </motion.div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -390,7 +445,7 @@ export default function Page() {
           <p className="text-lg">Error: {error.message}</p>
         </motion.div>
       </div>
-    )
+    );
   }
 
   const todosToDisplay =
@@ -399,11 +454,11 @@ export default function Page() {
       : data?.todos
       ? [...data.todos].sort((a, b) => {
           if (a.order !== undefined && b.order !== undefined) {
-            return a.order - b.order
+            return a.order - b.order;
           }
-          return a.id - b.id
+          return a.id - b.id;
         })
-      : []
+      : [];
 
   return (
     <ScrollArea className="flex h-screen flex-col bg-background">
@@ -538,7 +593,7 @@ export default function Page() {
                   className="space-y-4"
                   draggedItemClassName="opacity-50 scale-105"
                 >
-                  {todosToDisplay.map((todo: any, index: number) => (
+                  {todosToDisplay.map((todo, index) => (
                     <TodoItem
                       key={todo.id}
                       todo={todo}
@@ -585,7 +640,7 @@ export default function Page() {
         onOpenChange={setPepTalkOpen}
         todos={data?.todos || []}
         user={user}
-        useFeature={useFeature}
+        recordFeatureUsage={recordFeatureUsage}
         refetchFeatureUsage={refetchFeatureUsage}
         hasUsedFeature={hasUsedFeature}
         isAnonymous={isAnonymous}
@@ -596,7 +651,7 @@ export default function Page() {
         onOpenChange={setImageDialogOpen}
         onAddTodos={handleAddTodosFromImage}
         user={user}
-        useFeature={useFeature}
+        recordFeatureUsage={recordFeatureUsage}
         refetchFeatureUsage={refetchFeatureUsage}
         hasUsedFeature={hasUsedFeature}
         isAnonymous={isAnonymous}
@@ -630,5 +685,5 @@ export default function Page() {
         </div>
       )}
     </ScrollArea>
-  )
+  );
 }

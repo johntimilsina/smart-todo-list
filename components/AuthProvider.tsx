@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const getUser = async () => {
       setLoading(true)
-      let { data } = await supabase.auth.getUser()
+      const { data } = await supabase.auth.getUser()
       if (!data?.user) {
         const { data: anonData } = await supabase.auth.signInAnonymously()
         setUser(

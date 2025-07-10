@@ -1,11 +1,21 @@
-// app/api/graphql/route.ts
-import { ApolloServer } from "@apollo/server"
-import { startServerAndCreateNextHandler } from "@as-integrations/next"
-import { typeDefs } from "@/lib/graphql/schema"
-import { resolvers } from "@/lib/graphql/resolvers"
+import { ApolloServer } from "@apollo/server";
+import { startServerAndCreateNextHandler } from "@as-integrations/next";
+import { typeDefs } from "@/lib/graphql/schema";
+import { resolvers } from "@/lib/graphql/resolvers";
 
-const server = new ApolloServer({ typeDefs, resolvers })
+// 1. Create Apollo server
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+});
 
-const handler = startServerAndCreateNextHandler(server)
+// 2. Create handler function that accepts (request, context)
+const handler = startServerAndCreateNextHandler(server);
 
-export { handler as GET, handler as POST }
+export async function GET(request: Request) {
+  return handler(request); // `context` not needed by Apollo, but accepted by Next
+}
+
+export async function POST(request: Request) {
+  return handler(request);
+}

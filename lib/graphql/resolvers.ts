@@ -1,7 +1,8 @@
-import { PrismaClient } from "@prisma/client"
+
+import { PrismaClient, Todo, FeatureUsage } from "@prisma/client"
 const prisma = new PrismaClient()
 
-function isAnonymousUser(userId: string, isAnonymous?: boolean) {
+function isAnonymousUser(userId: string, isAnonymous?: boolean): boolean {
   //TODO:  If isAnonymous passed from frontend, use it directly
   // Otherwise, implement logic to check userId pattern or fetch user metadata
   return !!isAnonymous
@@ -9,12 +10,15 @@ function isAnonymousUser(userId: string, isAnonymous?: boolean) {
 
 export const resolvers = {
   Query: {
-    todos: async (_: any, { userId }: { userId: string }) =>
+    todos: async (_: unknown, { userId }: { userId: string }): Promise<Todo[]> =>
       prisma.todo.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
       }),
-    featureUsage: async (_: any, { userId }: { userId: string }) =>
+    featureUsage: async (
+      _: unknown,
+      { userId }: { userId: string }
+    ): Promise<FeatureUsage[]> =>
       prisma.featureUsage.findMany({
         where: { userId },
         orderBy: { usedAt: "desc" },
@@ -22,13 +26,13 @@ export const resolvers = {
   },
   Mutation: {
     addTodo: async (
-      _: any,
+      _: unknown,
       {
         text,
         userId,
         isAnonymous,
       }: { text: string; userId: string; isAnonymous?: boolean }
-    ) => {
+    ): Promise<Todo> => {
       if (isAnonymousUser(userId, isAnonymous)) {
         const count = await prisma.todo.count({ where: { userId } })
         if (count >= 3)
@@ -39,18 +43,18 @@ export const resolvers = {
       return prisma.todo.create({ data: { text, userId } })
     },
     deleteTodo: async (
-      _: any,
+      _: unknown,
       { id, userId }: { id: number; userId: string }
-    ) => {
+    ): Promise<boolean> => {
       const todo = await prisma.todo.findUnique({ where: { id } })
       if (!todo || todo.userId !== userId) throw new Error("Not authorized")
       await prisma.todo.delete({ where: { id } })
       return true
     },
     toggleTodo: async (
-      _: any,
+      _: unknown,
       { id, userId }: { id: number; userId: string }
-    ) => {
+    ): Promise<Todo> => {
       const todo = await prisma.todo.findUnique({ where: { id } })
       if (!todo || todo.userId !== userId) throw new Error("Not authorized")
       return prisma.todo.update({
@@ -59,19 +63,18 @@ export const resolvers = {
       })
     },
     addSuggestion: async (
-      _: any,
+      _: unknown,
       {
         id,
         suggestion,
         userId,
-        isAnonymous,
       }: {
         id: number
         suggestion: string[]
         userId: string
         isAnonymous?: boolean
       }
-    ) => {
+    ): Promise<Todo> => {
       const todo = await prisma.todo.findUnique({ where: { id } })
       if (!todo || todo.userId !== userId) throw new Error("Not authorized")
       return prisma.todo.update({
@@ -80,13 +83,12 @@ export const resolvers = {
       })
     },
     reorderTodos: async (
-      _: any,
+      _: unknown,
       {
         todoIds,
         userId,
-        isAnonymous,
       }: { todoIds: number[]; userId: string; isAnonymous?: boolean }
-    ) => {
+    ): Promise<Todo[]> => {
       // Update each todo with its new order position, only for this user
       const updatePromises = todoIds.map((id, index) =>
         prisma.todo.update({
@@ -101,13 +103,20 @@ export const resolvers = {
         orderBy: { order: "asc" },
       })
     },
-    useFeature: async (_: any, { userId, feature }: { userId: string; feature: string }) => {
+    recordFeatureUsage: async (
+      _: unknown,
+      { userId, feature }: { userId: string; feature: string }
+    ): Promise<FeatureUsage | null> => {
       // Always record the usage, regardless of user type
       try {
         return await prisma.featureUsage.create({ data: { userId, feature } })
-      } catch (err: any) {
-        // If already exists, return the existing record
-        if (err.code === 'P2002') {
+      } catch (err: unknown) {
+        if (
+          typeof err === "object" &&
+          err !== null &&
+          "code" in err &&
+          (err as { code: string }).code === "P2002"
+        ) {
           // Unique constraint failed, fetch and return existing
           return await prisma.featureUsage.findUnique({
             where: { userId_feature: { userId, feature } },

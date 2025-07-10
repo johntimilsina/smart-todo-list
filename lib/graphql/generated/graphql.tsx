@@ -30,9 +30,9 @@ export type Mutation = {
   addSuggestion: Todo;
   addTodo: Todo;
   deleteTodo: Scalars['Boolean']['output'];
+  recordFeatureUsage: FeatureUsage;
   reorderTodos: Array<Todo>;
   toggleTodo: Todo;
-  useFeature: FeatureUsage;
 };
 
 
@@ -55,6 +55,12 @@ export type MutationDeleteTodoArgs = {
 };
 
 
+export type MutationRecordFeatureUsageArgs = {
+  feature: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+};
+
+
 export type MutationReorderTodosArgs = {
   todoIds: Array<Scalars['Int']['input']>;
   userId: Scalars['String']['input'];
@@ -63,12 +69,6 @@ export type MutationReorderTodosArgs = {
 
 export type MutationToggleTodoArgs = {
   id: Scalars['Int']['input'];
-  userId: Scalars['String']['input'];
-};
-
-
-export type MutationUseFeatureArgs = {
-  feature: Scalars['String']['input'];
   userId: Scalars['String']['input'];
 };
 
@@ -140,13 +140,13 @@ export type ToggleTodoMutationVariables = Exact<{
 
 export type ToggleTodoMutation = { __typename?: 'Mutation', toggleTodo: { __typename?: 'Todo', id: number, completed: boolean } };
 
-export type UseFeatureMutationVariables = Exact<{
+export type RecordFeatureUsageMutationVariables = Exact<{
   userId: Scalars['String']['input'];
   feature: Scalars['String']['input'];
 }>;
 
 
-export type UseFeatureMutation = { __typename?: 'Mutation', useFeature: { __typename?: 'FeatureUsage', id: number, userId: string, feature: string, usedAt: string } };
+export type RecordFeatureUsageMutation = { __typename?: 'Mutation', recordFeatureUsage: { __typename?: 'FeatureUsage', id: number, userId: string, feature: string, usedAt: string } };
 
 export type FeatureUsageQueryVariables = Exact<{
   userId: Scalars['String']['input'];
@@ -160,7 +160,7 @@ export type GetTodosQueryVariables = Exact<{
 }>;
 
 
-export type GetTodosQuery = { __typename?: 'Query', todos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, suggestion?: Array<string | null> | null, order: number, userId: string }> };
+export type GetTodosQuery = { __typename?: 'Query', todos: Array<{ __typename?: 'Todo', id: number, text: string, completed: boolean, suggestion?: Array<string | null> | null, order: number, userId: string, createdAt: string }> };
 
 
 export const AddSuggestionDocument = gql`
@@ -343,9 +343,9 @@ export function useToggleTodoMutation(baseOptions?: Apollo.MutationHookOptions<T
 export type ToggleTodoMutationHookResult = ReturnType<typeof useToggleTodoMutation>;
 export type ToggleTodoMutationResult = Apollo.MutationResult<ToggleTodoMutation>;
 export type ToggleTodoMutationOptions = Apollo.BaseMutationOptions<ToggleTodoMutation, ToggleTodoMutationVariables>;
-export const UseFeatureDocument = gql`
-    mutation UseFeature($userId: String!, $feature: String!) {
-  useFeature(userId: $userId, feature: $feature) {
+export const RecordFeatureUsageDocument = gql`
+    mutation RecordFeatureUsage($userId: String!, $feature: String!) {
+  recordFeatureUsage(userId: $userId, feature: $feature) {
     id
     userId
     feature
@@ -353,33 +353,33 @@ export const UseFeatureDocument = gql`
   }
 }
     `;
-export type UseFeatureMutationFn = Apollo.MutationFunction<UseFeatureMutation, UseFeatureMutationVariables>;
+export type RecordFeatureUsageMutationFn = Apollo.MutationFunction<RecordFeatureUsageMutation, RecordFeatureUsageMutationVariables>;
 
 /**
- * __useUseFeatureMutation__
+ * __useRecordFeatureUsageMutation__
  *
- * To run a mutation, you first call `useUseFeatureMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUseFeatureMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useRecordFeatureUsageMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRecordFeatureUsageMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [useFeatureMutation, { data, loading, error }] = useUseFeatureMutation({
+ * const [recordFeatureUsageMutation, { data, loading, error }] = useRecordFeatureUsageMutation({
  *   variables: {
  *      userId: // value for 'userId'
  *      feature: // value for 'feature'
  *   },
  * });
  */
-export function useUseFeatureMutation(baseOptions?: Apollo.MutationHookOptions<UseFeatureMutation, UseFeatureMutationVariables>) {
+export function useRecordFeatureUsageMutation(baseOptions?: Apollo.MutationHookOptions<RecordFeatureUsageMutation, RecordFeatureUsageMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<UseFeatureMutation, UseFeatureMutationVariables>(UseFeatureDocument, options);
+        return Apollo.useMutation<RecordFeatureUsageMutation, RecordFeatureUsageMutationVariables>(RecordFeatureUsageDocument, options);
       }
-export type UseFeatureMutationHookResult = ReturnType<typeof useUseFeatureMutation>;
-export type UseFeatureMutationResult = Apollo.MutationResult<UseFeatureMutation>;
-export type UseFeatureMutationOptions = Apollo.BaseMutationOptions<UseFeatureMutation, UseFeatureMutationVariables>;
+export type RecordFeatureUsageMutationHookResult = ReturnType<typeof useRecordFeatureUsageMutation>;
+export type RecordFeatureUsageMutationResult = Apollo.MutationResult<RecordFeatureUsageMutation>;
+export type RecordFeatureUsageMutationOptions = Apollo.BaseMutationOptions<RecordFeatureUsageMutation, RecordFeatureUsageMutationVariables>;
 export const FeatureUsageDocument = gql`
     query FeatureUsage($userId: String!) {
   featureUsage(userId: $userId) {
@@ -432,6 +432,7 @@ export const GetTodosDocument = gql`
     suggestion
     order
     userId
+    createdAt
   }
 }
     `;
