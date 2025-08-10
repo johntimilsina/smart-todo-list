@@ -10,6 +10,8 @@ import {
     ArrowUpIcon as ClockArrowUp,
     DumbbellIcon as BicepsFlexed,
     XCircle,
+    Brain,
+    Sparkles,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -24,6 +26,7 @@ import { TodoItem } from '@/components/TodoItem'
 import { TodoInput } from '@/components/TodoInput'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { useSupabaseUser } from '@/components/AuthProvider'
+
 import {
     useGetTodosQuery,
     useAddTodoMutation,
@@ -74,6 +77,7 @@ export default function Page() {
     )
     const [pepTalkOpen, setPepTalkOpen] = useState(false)
     const [imageDialogOpen, setImageDialogOpen] = useState(false)
+    const [addingTask, setAddingTask] = useState(false)
 
     console.log('user', user)
 
@@ -88,6 +92,7 @@ export default function Page() {
             return
         }
 
+        setAddingTask(true)
         try {
             await addTodo({ variables: { text, userId: user.id } })
             await refetch()
@@ -104,6 +109,8 @@ export default function Page() {
                 //setShowLoginPrompt(true)
             }
             toast.error('Failed to add task')
+        } finally {
+            setAddingTask(false)
         }
     }
 
@@ -518,6 +525,7 @@ export default function Page() {
                                 </span>
                             )}
                         </Button>
+
                         <Button
                             size="lg"
                             variant="secondary"
@@ -576,6 +584,118 @@ export default function Page() {
                                                 <span className="text-sm font-medium">
                                                     Reordering tasks...
                                                 </span>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                    {addingTask && (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="absolute inset-0 bg-background/50 backdrop-blur-sm z-40 flex items-center justify-center rounded-lg"
+                                        >
+                                            <div className="bg-background border rounded-lg p-6 shadow-lg flex flex-col items-center gap-4">
+                                                <div className="relative">
+                                                    <motion.div
+                                                        animate={{
+                                                            rotate: 360,
+                                                            scale: [1, 1.1, 1],
+                                                        }}
+                                                        transition={{
+                                                            rotate: {
+                                                                duration: 2,
+                                                                repeat: Number.POSITIVE_INFINITY,
+                                                                ease: 'linear',
+                                                            },
+                                                            scale: {
+                                                                duration: 1,
+                                                                repeat: Number.POSITIVE_INFINITY,
+                                                                ease: 'easeInOut',
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Brain className="h-8 w-8 text-primary" />
+                                                    </motion.div>
+                                                    <motion.div
+                                                        className="absolute -top-1 -right-1"
+                                                        animate={{
+                                                            opacity: [0, 1, 0],
+                                                            scale: [
+                                                                0.8, 1.2, 0.8,
+                                                            ],
+                                                        }}
+                                                        transition={{
+                                                            duration: 1.5,
+                                                            repeat: Number.POSITIVE_INFINITY,
+                                                            ease: 'easeInOut',
+                                                        }}
+                                                    >
+                                                        <Sparkles className="h-4 w-4 text-yellow-500" />
+                                                    </motion.div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <motion.div
+                                                        className="text-sm font-medium mb-1"
+                                                        animate={{
+                                                            opacity: [
+                                                                0.7, 1, 0.7,
+                                                            ],
+                                                        }}
+                                                        transition={{
+                                                            duration: 1.5,
+                                                            repeat: Number.POSITIVE_INFINITY,
+                                                            ease: 'easeInOut',
+                                                        }}
+                                                    >
+                                                        AI is processing your
+                                                        task ..
+                                                    </motion.div>
+                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                        <span>Analyzing</span>
+                                                        <motion.span
+                                                            animate={{
+                                                                opacity: [
+                                                                    0, 1, 0,
+                                                                ],
+                                                            }}
+                                                            transition={{
+                                                                duration: 0.5,
+                                                                repeat: Number.POSITIVE_INFINITY,
+                                                                delay: 0,
+                                                            }}
+                                                        >
+                                                            .
+                                                        </motion.span>
+                                                        <motion.span
+                                                            animate={{
+                                                                opacity: [
+                                                                    0, 1, 0,
+                                                                ],
+                                                            }}
+                                                            transition={{
+                                                                duration: 0.5,
+                                                                repeat: Number.POSITIVE_INFINITY,
+                                                                delay: 0.2,
+                                                            }}
+                                                        >
+                                                            .
+                                                        </motion.span>
+                                                        <motion.span
+                                                            animate={{
+                                                                opacity: [
+                                                                    0, 1, 0,
+                                                                ],
+                                                            }}
+                                                            transition={{
+                                                                duration: 0.5,
+                                                                repeat: Number.POSITIVE_INFINITY,
+                                                                delay: 0.4,
+                                                            }}
+                                                        >
+                                                            .
+                                                        </motion.span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </motion.div>
                                     )}
