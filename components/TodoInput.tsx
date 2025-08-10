@@ -36,8 +36,8 @@ export function TodoInput({ onAddTask, onCreateFromImage }: TodoInputProps) {
                                 value={task}
                                 onChange={(e) => setTask(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="What would you like to accomplish today? Describe your goal and I'll help you break it down..."
-                                className="min-h-[100px] text-base border-0 bg-transparent resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/70"
+                                placeholder="What would you like to accomplish today?"
+                                className="min-h-[70px] text-base border-0 bg-transparent resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/70"
                             />
                         </div>
                     </div>
@@ -46,20 +46,20 @@ export function TodoInput({ onAddTask, onCreateFromImage }: TodoInputProps) {
                         <div className="flex items-center gap-2">
                             <Button
                                 type="button"
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
                                 onClick={onCreateFromImage}
                                 className="text-muted-foreground hover:text-foreground"
                             >
                                 <Img className="w-4 h-4 mr-2" />
-                                Create from Image
+                                Image
                             </Button>
                         </div>
 
                         <div className="flex items-center gap-2">
                             <Button
                                 type="submit"
-                                variant="outline"
+                                variant="default"
                                 size="sm"
                                 disabled={!task.trim()}
                                 className="px-6"
