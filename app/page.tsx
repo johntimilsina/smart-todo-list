@@ -90,7 +90,7 @@ export default function Page() {
 
         try {
             await addTodo({ variables: { text, userId: user.id } })
-            refetch()
+            await refetch()
             toast.success('Task added successfully')
         } catch (error: unknown) {
             if (
@@ -101,7 +101,7 @@ export default function Page() {
                 typeof (error as { message?: string }).message === 'string' &&
                 (error as { message: string }).message.includes('add 3 todos')
             ) {
-                setShowLoginPrompt(true)
+                //setShowLoginPrompt(true)
             }
             toast.error('Failed to add task')
         }
@@ -111,7 +111,7 @@ export default function Page() {
         e.stopPropagation()
         try {
             await deleteTodo({ variables: { id, userId: user?.id ?? '' } })
-            refetch()
+            await refetch()
             toast.success('Task deleted')
         } catch (error) {
             toast.error('Failed to delete task')
@@ -153,20 +153,20 @@ export default function Page() {
         const todo = data?.todos.find((t) => t.id === todoId)
         if (!todo) return
 
-        if (isAnonymous && hasUsedFeature('pep_talk')) {
-            setShowLoginPrompt(true)
-            toast.error(
-                'Anonymous users can only use Pep Talk once. Please log in.'
-            )
-            return
-        }
-
         if (todo.suggestion && todo.suggestion.length > 0) {
             setExpandedSuggestions(
                 expandedSuggestions === todoId ? null : todoId
             )
             return
         }
+
+        /* if (isAnonymous && hasUsedFeature('pep_talk')) {
+            setShowLoginPrompt(true)
+            toast.error(
+                'Anonymous users can only use Pep Talk once. Please log in.'
+            )
+            return
+        } */
 
         setLoadingSuggestions(todoId)
         try {
@@ -207,7 +207,7 @@ export default function Page() {
                 typeof (error as { message?: string }).message === 'string' &&
                 (error as { message: string }).message.includes('feature once')
             ) {
-                setShowLoginPrompt(true)
+                //setShowLoginPrompt(true)
             }
             console.error(error)
             toast.error('Failed to generate suggestions')
@@ -264,7 +264,7 @@ export default function Page() {
                 typeof (error as { message?: string }).message === 'string' &&
                 (error as { message: string }).message.includes('feature once')
             ) {
-                setShowLoginPrompt(true)
+                // setShowLoginPrompt(true)
             }
             toast.error('Failed to reorder tasks')
             setOptimisticTodos([])
@@ -370,7 +370,7 @@ export default function Page() {
                             'feature once'
                         )
                     ) {
-                        setShowLoginPrompt(true)
+                        //setShowLoginPrompt(true)
                     }
                     toast.error('Failed to reorder tasks')
                     setOptimisticTodos([])
